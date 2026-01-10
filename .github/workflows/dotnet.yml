@@ -1,0 +1,32 @@
+name: .NET Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    
+    - name: Restore dependencies
+      working-directory: ./server
+      run: dotnet restore OutreachGenie.slnx
+    
+    - name: Build
+      working-directory: ./server
+      run: dotnet build OutreachGenie.slnx --no-restore --configuration Release
+    
+    - name: Test
+      working-directory: ./server
+      run: dotnet test OutreachGenie.slnx --no-build --configuration Release --verbosity normal

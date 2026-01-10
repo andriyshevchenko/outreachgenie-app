@@ -1,0 +1,6 @@
+@OutreachGenieApi_HostAddress = http://localhost:5250
+
+GET {{OutreachGenieApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
