@@ -2,32 +2,38 @@ name: .NET
 
 on:
   push:
-    branches: [ "%feature/integration-tests-complete", "main" ]
+    branches:
+      - feature/integration-tests-complete
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
 
-    - name: Verify Docker
-      run: |
-        docker --version
-        docker info
+      # Docker is preinstalled on ubuntu-latest.
+      # This step verifies availability and fails fast if missing.
+      - name: Verify Docker
+        run: |
+          docker --version
+          docker info
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Restore dependencies
+        run: dotnet restore
 
-    - name: Build
-      run: dotnet build --no-restore
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
 
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal
