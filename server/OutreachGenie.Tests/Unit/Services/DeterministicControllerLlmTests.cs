@@ -28,7 +28,7 @@ public sealed class DeterministicControllerLlmTests
     private readonly Mock<ILlmProvider> llm;
     private readonly Mock<IMcpToolRegistry> registry;
     private readonly Mock<IMcpServer> server;
-    private readonly DeterministicController controller;
+    private readonly IDeterministicController controller;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DeterministicControllerLlmTests"/> class.

@@ -13,7 +13,7 @@ namespace OutreachGenie.Application.Services;
 /// Reloads state at start of every cycle, validates proposals, executes actions, persists audit logs.
 /// LLM receives campaign state and available MCP tools, proposes tool calls dynamically.
 /// </summary>
-public sealed class DeterministicController
+public sealed class DeterministicController : IDeterministicController
 {
     private readonly ICampaignRepository campaigns;
     private readonly ITaskRepository tasks;

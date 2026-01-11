@@ -22,7 +22,7 @@ public sealed class DeterministicControllerTests
     private readonly Mock<ILeadRepository> leadRepository;
     private readonly Mock<ILlmProvider> llmProvider;
     private readonly Mock<IMcpToolRegistry> mcpRegistry;
-    private readonly DeterministicController controller;
+    private readonly IDeterministicController controller;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DeterministicControllerTests"/> class.

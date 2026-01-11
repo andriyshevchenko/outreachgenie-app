@@ -53,6 +53,7 @@ public sealed class AgentHostedService : BackgroundService
             try
             {
                 await ProcessActiveCampaignsAsync(stoppingToken);
+                await Task.Delay(configuration.PollingIntervalMs, stoppingToken);
             }
             catch (OperationCanceledException ex)
             {
@@ -65,8 +66,6 @@ public sealed class AgentHostedService : BackgroundService
                     ex,
                     "Unhandled exception in agent background service loop");
             }
-
-            await Task.Delay(configuration.PollingIntervalMs, stoppingToken);
         }
 
         this.logger.LogInformation("Agent background service stopped");
@@ -78,7 +77,7 @@ public sealed class AgentHostedService : BackgroundService
 
         var campaignRepo = scope.ServiceProvider.GetRequiredService<ICampaignRepository>();
         var taskRepo = scope.ServiceProvider.GetRequiredService<ITaskRepository>();
-        var controller = scope.ServiceProvider.GetRequiredService<DeterministicController>();
+        var controller = scope.ServiceProvider.GetRequiredService<IDeterministicController>();
         var notificationService = scope.ServiceProvider.GetRequiredService<IAgentNotificationService>();
 
         var activeCampaigns = await campaignRepo.GetAllAsync(cancellationToken);
@@ -115,7 +114,7 @@ public sealed class AgentHostedService : BackgroundService
     private async Task ProcessCampaignAsync(
         Guid campaignId,
         ITaskRepository taskRepo,
-        DeterministicController controller,
+        IDeterministicController controller,
         IAgentNotificationService notificationService,
         CancellationToken cancellationToken)
     {

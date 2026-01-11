@@ -48,7 +48,7 @@ builder.Services.AddSingleton(sp =>
 });
 
 // Register DeterministicController
-builder.Services.AddScoped<OutreachGenie.Application.Services.DeterministicController>();
+builder.Services.AddScoped<OutreachGenie.Application.Services.IDeterministicController, OutreachGenie.Application.Services.DeterministicController>();
 
 // Register LLM provider
 builder.Services.AddSingleton<OutreachGenie.Application.Services.Llm.ILlmProvider, OutreachGenie.Application.Services.Llm.OpenAiLlmProvider>();

@@ -56,7 +56,7 @@ public sealed class AgentHostedServiceTests
         this.scope.Setup(s => s.ServiceProvider).Returns(this.serviceProvider.Object);
         this.serviceProvider.Setup(p => p.GetService(typeof(ICampaignRepository))).Returns(this.campaignRepo.Object);
         this.serviceProvider.Setup(p => p.GetService(typeof(ITaskRepository))).Returns(this.taskRepo.Object);
-        this.serviceProvider.Setup(p => p.GetService(typeof(DeterministicController))).Returns((object)this.controller);
+        this.serviceProvider.Setup(p => p.GetService(typeof(IDeterministicController))).Returns(this.controller);
         this.serviceProvider.Setup(p => p.GetService(typeof(IAgentNotificationService))).Returns(this.notificationService.Object);
     }
 
@@ -245,10 +245,12 @@ public sealed class AgentHostedServiceTests
         this.campaignRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Campaign>());
         var service = new AgentHostedService(this.scopeFactory.Object, this.configuration, this.logger.Object);
         using var cts = new CancellationTokenSource();
-        await service.StartAsync(cts.Token);
+        var executeTask = service.StartAsync(cts.Token);
+        await Task.Delay(200);
         await cts.CancelAsync();
-        await Task.Delay(100);
+        await Task.Delay(200);
         await service.StopAsync(CancellationToken.None);
+        await executeTask;
         this.logger.Verify(
             l => l.Log(
                 LogLevel.Information,
