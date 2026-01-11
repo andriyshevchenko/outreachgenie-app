@@ -230,158 +230,11 @@ public sealed class DeterministicController : IDeterministicController
     /// <returns>Completed task.</returns>
     public async Task ExecuteTaskWithLlmAsync(Guid taskId, CancellationToken cancellationToken = default)
     {
-        var task = await this.tasks.GetByIdAsync(taskId, cancellationToken);
-        if (task == null)
-        {
-            throw new InvalidOperationException($"Task {taskId} not found");
-        }
-
-        var state = await this.ReloadStateAsync(task.CampaignId, cancellationToken);
-        var validation = ValidateProposal(new ActionProposal { TaskId = taskId }, state);
-        if (!validation.IsValid)
-        {
-            throw new InvalidOperationException($"Task {taskId} is not eligible for execution");
-        }
-
-        task.Status = TaskStatus.InProgress;
-        task.StartedAt = DateTime.UtcNow;
-        await this.tasks.UpdateAsync(task, cancellationToken);
-
+        var task = await this.PrepareTaskForExecutionAsync(taskId, cancellationToken);
         var tools = await this.registry.DiscoverToolsAsync(cancellationToken);
         var prompt = $"Execute task: {task.Description}. Task type: {task.Type}. Use available MCP tools to complete this task.";
-        var maxIterations = 20;
-        var iteration = 0;
-        var consecutiveErrors = 0;
-        var maxConsecutiveErrors = 3;
-        while (iteration < maxIterations)
-        {
-            iteration++;
-            try
-            {
-                state = await this.ReloadStateAsync(task.CampaignId, cancellationToken);
-                ActionProposal? proposal = null;
-                var retryCount = 0;
-                var maxRetries = 3;
-                while (retryCount < maxRetries)
-                {
-                    try
-                    {
-                        proposal = await this.llm.GenerateProposalAsync(state, tools, prompt, cancellationToken);
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        retryCount++;
-                        if (retryCount >= maxRetries)
-                        {
-                            throw new InvalidOperationException($"LLM failed after {maxRetries} retries: {ex.Message}", ex);
-                        }
-
-                        await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, retryCount)), cancellationToken);
-                    }
-                }
-
-                if (proposal == null || string.IsNullOrEmpty(proposal.ActionType))
-                {
-                    consecutiveErrors++;
-                    if (consecutiveErrors >= maxConsecutiveErrors)
-                    {
-                        throw new InvalidOperationException($"LLM returned invalid proposals {consecutiveErrors} times consecutively");
-                    }
-
-                    await this.CreateAuditLogAsync(
-                        task.CampaignId,
-                        "invalid_proposal",
-                        $"{{\"iteration\":{iteration},\"error\":\"LLM returned null or empty ActionType\"}}",
-                        cancellationToken);
-                    continue;
-                }
-
-                consecutiveErrors = 0;
-                if (proposal.ActionType.Equals("task_complete", StringComparison.OrdinalIgnoreCase))
-                {
-                    await this.UpdateTaskAfterExecutionAsync(
-                        task,
-                        TaskStatus.Done,
-                        proposal.Parameters,
-                        null,
-                        cancellationToken);
-                    await this.CreateAuditLogAsync(
-                        task.CampaignId,
-                        "task_complete",
-                        $"{{\"task_id\":\"{taskId}\",\"iterations\":{iteration}}}",
-                        cancellationToken);
-                    return;
-                }
-
-                var tool = await this.registry.FindToolAsync(proposal.ActionType, cancellationToken);
-                if (tool == null)
-                {
-                    await this.CreateAuditLogAsync(
-                        task.CampaignId,
-                        "invalid_tool",
-                        $"{{\"tool_name\":\"{proposal.ActionType}\",\"task_id\":\"{taskId}\",\"iteration\":{iteration}}}",
-                        cancellationToken);
-                    prompt = $"Error: Tool '{proposal.ActionType}' not found. Available tools: {string.Join(", ", tools.Select(t => t.Name))}. Continue executing task: {task.Description}.";
-                    continue;
-                }
-
-                if (!string.IsNullOrEmpty(proposal.Parameters))
-                {
-                    try
-                    {
-                        JsonDocument.Parse(proposal.Parameters);
-                    }
-                    catch (JsonException ex)
-                    {
-                        await this.CreateAuditLogAsync(
-                            task.CampaignId,
-                            "invalid_parameters",
-                            $"{{\"tool_name\":\"{proposal.ActionType}\",\"error\":\"{ex.Message}\",\"iteration\":{iteration}}}",
-                            cancellationToken);
-                        prompt = $"Error: Invalid JSON parameters for tool '{proposal.ActionType}'. Continue executing task: {task.Description}.";
-                        continue;
-                    }
-                }
-
-                var result = await this.ExecuteToolAsync(proposal, cancellationToken);
-                await this.CreateAuditLogAsync(
-                    task.CampaignId,
-                    proposal.ActionType,
-                    $"{{\"tool_name\":\"{proposal.ActionType}\",\"parameters\":{proposal.Parameters ?? "null"},\"result\":{result},\"iteration\":{iteration}}}",
-                    cancellationToken);
-                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
-                prompt = $"Previous action: {proposal.ActionType}. Result: {result}. Continue executing task: {task.Description}.";
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                consecutiveErrors++;
-                if (consecutiveErrors >= maxConsecutiveErrors)
-                {
-                    await this.UpdateTaskAfterExecutionAsync(
-                        task,
-                        TaskStatus.Failed,
-                        null,
-                        $"Failed after {consecutiveErrors} consecutive errors: {ex.Message}",
-                        cancellationToken);
-                    throw;
-                }
-
-                await this.CreateAuditLogAsync(
-                    task.CampaignId,
-                    "execution_error",
-                    $"{{\"iteration\":{iteration},\"error\":\"{ex.Message}\",\"type\":\"{ex.GetType().Name}\"}}",
-                    cancellationToken);
-                prompt = $"Error occurred: {ex.Message}. Try alternative approach to execute task: {task.Description}.";
-            }
-        }
-
-        await this.UpdateTaskAfterExecutionAsync(
-            task,
-            TaskStatus.Failed,
-            null,
-            $"Exceeded maximum iterations ({maxIterations})",
-            cancellationToken);
+        var context = new ExecutionContext(task, 20, 3);
+        await this.ExecuteTaskIterationsAsync(context, tools, prompt, cancellationToken);
     }
 
     /// <summary>
@@ -403,6 +256,181 @@ public sealed class DeterministicController : IDeterministicController
             (CampaignStatus.Paused, CampaignStatus.Error) => true,
             _ => false,
         };
+    }
+
+    private static bool ValidateProposalParameters(string? parameters)
+    {
+        if (string.IsNullOrEmpty(parameters))
+        {
+            return true;
+        }
+
+        try
+        {
+            JsonDocument.Parse(parameters);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private async Task<CampaignTask> PrepareTaskForExecutionAsync(Guid taskId, CancellationToken cancellationToken)
+    {
+        var task = await this.tasks.GetByIdAsync(taskId, cancellationToken);
+        if (task == null)
+        {
+            throw new InvalidOperationException($"Task {taskId} not found");
+        }
+
+        var state = await this.ReloadStateAsync(task.CampaignId, cancellationToken);
+        var validation = ValidateProposal(new ActionProposal { TaskId = taskId }, state);
+        if (!validation.IsValid)
+        {
+            throw new InvalidOperationException($"Task {taskId} is not eligible for execution");
+        }
+
+        task.Status = TaskStatus.InProgress;
+        task.StartedAt = DateTime.UtcNow;
+        await this.tasks.UpdateAsync(task, cancellationToken);
+        return task;
+    }
+
+    private async Task ExecuteTaskIterationsAsync(ExecutionContext context, IReadOnlyList<McpTool> tools, string prompt, CancellationToken cancellationToken)
+    {
+        var currentPrompt = prompt;
+        while (context.Iteration < context.MaxIterations)
+        {
+            context.Iteration++;
+
+            try
+            {
+                var state = await this.ReloadStateAsync(context.Task.CampaignId, cancellationToken);
+                var proposal = await this.GenerateProposalWithRetryAsync(state, tools, currentPrompt, cancellationToken);
+                var processingResult = await this.ProcessProposalAsync(proposal, context, tools, cancellationToken);
+
+                if (processingResult.IsComplete)
+                {
+                    return;
+                }
+
+                currentPrompt = string.IsNullOrEmpty(processingResult.NextPrompt) ? currentPrompt : processingResult.NextPrompt;
+                context.ConsecutiveErrors = 0;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                currentPrompt = await this.HandleIterationErrorAsync(context, ex, cancellationToken);
+            }
+        }
+
+        await this.UpdateTaskAfterExecutionAsync(context.Task, TaskStatus.Failed, null, $"Exceeded maximum iterations ({context.MaxIterations})", cancellationToken);
+    }
+
+    private async Task<ActionProposal> GenerateProposalWithRetryAsync(CampaignState state, IReadOnlyList<McpTool> tools, string prompt, CancellationToken cancellationToken)
+    {
+        var maxRetries = 3;
+        Exception? lastException = null;
+
+        for (var attempt = 1; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                return await this.llm.GenerateProposalAsync(state, tools, prompt, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                lastException = ex;
+                if (attempt < maxRetries)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)), cancellationToken);
+                }
+            }
+        }
+
+        throw new InvalidOperationException($"LLM failed after {maxRetries} retries: {lastException?.Message}", lastException);
+    }
+
+    private async Task<ProposalProcessingResult> ProcessProposalAsync(ActionProposal proposal, ExecutionContext context, IReadOnlyList<McpTool> tools, CancellationToken cancellationToken)
+    {
+        if (proposal == null || string.IsNullOrEmpty(proposal.ActionType))
+        {
+            return await this.HandleInvalidProposalAsync(context, cancellationToken);
+        }
+
+        if (proposal.ActionType.Equals("task_complete", StringComparison.OrdinalIgnoreCase))
+        {
+            await this.CompleteTaskAsync(context.Task, proposal, context.Iteration, cancellationToken);
+            return ProposalProcessingResult.Completed();
+        }
+
+        var tool = await this.registry.FindToolAsync(proposal.ActionType, cancellationToken);
+        if (tool == null)
+        {
+            return await this.HandleMissingToolAsync(proposal, context, tools, cancellationToken);
+        }
+
+        var parametersValid = ValidateProposalParameters(proposal.Parameters);
+        if (!parametersValid)
+        {
+            return await this.HandleInvalidParametersAsync(proposal, context, cancellationToken);
+        }
+
+        return await this.ExecuteToolActionAsync(proposal, context, cancellationToken);
+    }
+
+    private async Task<ProposalProcessingResult> HandleInvalidProposalAsync(ExecutionContext context, CancellationToken cancellationToken)
+    {
+        context.ConsecutiveErrors++;
+        if (context.ConsecutiveErrors >= context.MaxConsecutiveErrors)
+        {
+            throw new InvalidOperationException($"LLM returned invalid proposals {context.ConsecutiveErrors} times consecutively");
+        }
+
+        await this.CreateAuditLogAsync(context.Task.CampaignId, "invalid_proposal", $"{{\"iteration\":{context.Iteration},\"error\":\"LLM returned null or empty ActionType\"}}", cancellationToken);
+        return ProposalProcessingResult.Continue(string.Empty);
+    }
+
+    private async Task CompleteTaskAsync(CampaignTask task, ActionProposal proposal, int iterations, CancellationToken cancellationToken)
+    {
+        await this.UpdateTaskAfterExecutionAsync(task, TaskStatus.Done, proposal.Parameters, null, cancellationToken);
+        await this.CreateAuditLogAsync(task.CampaignId, "task_complete", $"{{\"task_id\":\"{task.Id}\",\"iterations\":{iterations}}}", cancellationToken);
+    }
+
+    private async Task<ProposalProcessingResult> HandleMissingToolAsync(ActionProposal proposal, ExecutionContext context, IReadOnlyList<McpTool> tools, CancellationToken cancellationToken)
+    {
+        await this.CreateAuditLogAsync(context.Task.CampaignId, "invalid_tool", $"{{\"tool_name\":\"{proposal.ActionType}\",\"task_id\":\"{context.Task.Id}\",\"iteration\":{context.Iteration}}}", cancellationToken);
+        var nextPrompt = $"Error: Tool '{proposal.ActionType}' not found. Available tools: {string.Join(", ", tools.Select(t => t.Name))}. Continue executing task: {context.Task.Description}.";
+        return ProposalProcessingResult.Continue(nextPrompt);
+    }
+
+    private async Task<ProposalProcessingResult> HandleInvalidParametersAsync(ActionProposal proposal, ExecutionContext context, CancellationToken cancellationToken)
+    {
+        await this.CreateAuditLogAsync(context.Task.CampaignId, "invalid_parameters", $"{{\"tool_name\":\"{proposal.ActionType}\",\"iteration\":{context.Iteration}}}", cancellationToken);
+        var nextPrompt = $"Error: Invalid JSON parameters for tool '{proposal.ActionType}'. Continue executing task: {context.Task.Description}.";
+        return ProposalProcessingResult.Continue(nextPrompt);
+    }
+
+    private async Task<ProposalProcessingResult> ExecuteToolActionAsync(ActionProposal proposal, ExecutionContext context, CancellationToken cancellationToken)
+    {
+        var result = await this.ExecuteToolAsync(proposal, cancellationToken);
+        await this.CreateAuditLogAsync(context.Task.CampaignId, proposal.ActionType, $"{{\"tool_name\":\"{proposal.ActionType}\",\"parameters\":{proposal.Parameters ?? "null"},\"result\":{result},\"iteration\":{context.Iteration}}}", cancellationToken);
+        await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+        var nextPrompt = $"Previous action: {proposal.ActionType}. Result: {result}. Continue executing task: {context.Task.Description}.";
+        return ProposalProcessingResult.Continue(nextPrompt);
+    }
+
+    private async Task<string> HandleIterationErrorAsync(ExecutionContext context, Exception ex, CancellationToken cancellationToken)
+    {
+        context.ConsecutiveErrors++;
+        if (context.ConsecutiveErrors >= context.MaxConsecutiveErrors)
+        {
+            await this.UpdateTaskAfterExecutionAsync(context.Task, TaskStatus.Failed, null, $"Failed after {context.ConsecutiveErrors} consecutive errors: {ex.Message}", cancellationToken);
+            throw new InvalidOperationException($"Task {context.Task.Id} failed after {context.ConsecutiveErrors} consecutive errors", ex);
+        }
+
+        await this.CreateAuditLogAsync(context.Task.CampaignId, "execution_error", $"{{\"iteration\":{context.Iteration},\"error\":\"{ex.Message}\",\"type\":\"{ex.GetType().Name}\"}}", cancellationToken);
+        return $"Error occurred: {ex.Message}. Try alternative approach to execute task: {context.Task.Description}.";
     }
 
     /// <summary>
@@ -433,5 +461,48 @@ public sealed class DeterministicController : IDeterministicController
         }
 
         return $"{{\"error\":\"No server provides tool {proposal.ActionType}\"}}";
+    }
+
+    private sealed class ExecutionContext
+    {
+        public ExecutionContext(CampaignTask task, int maxIterations, int maxConsecutiveErrors)
+        {
+            this.Task = task;
+            this.MaxIterations = maxIterations;
+            this.MaxConsecutiveErrors = maxConsecutiveErrors;
+        }
+
+        public CampaignTask Task { get; }
+
+        public int MaxIterations { get; }
+
+        public int MaxConsecutiveErrors { get; }
+
+        public int Iteration { get; set; }
+
+        public int ConsecutiveErrors { get; set; }
+    }
+
+    private sealed class ProposalProcessingResult
+    {
+        private ProposalProcessingResult(bool isComplete, string nextPrompt)
+        {
+            this.IsComplete = isComplete;
+            this.NextPrompt = nextPrompt;
+        }
+
+        public bool IsComplete { get; }
+
+        public string NextPrompt { get; }
+
+        public static ProposalProcessingResult Completed()
+        {
+            return new ProposalProcessingResult(true, string.Empty);
+        }
+
+        public static ProposalProcessingResult Continue(string nextPrompt)
+        {
+            return new ProposalProcessingResult(false, nextPrompt);
+        }
     }
 }
