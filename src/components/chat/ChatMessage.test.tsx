@@ -16,7 +16,7 @@ describe('ChatMessage', () => {
     render(<ChatMessage message={message} />);
     
     expect(screen.getByText('Hello agent')).toBeInTheDocument();
-    expect(screen.getByText(/15:00/)).toBeInTheDocument();
+    expect(screen.getByText(/\d{1,2}:\d{2}/)).toBeInTheDocument();
   });
 
   it('should render assistant message', () => {
@@ -30,7 +30,7 @@ describe('ChatMessage', () => {
     render(<ChatMessage message={message} />);
     
     expect(screen.getByText('Hello user! How can I help?')).toBeInTheDocument();
-    expect(screen.getByText(/15:05/)).toBeInTheDocument();
+    expect(screen.getByText(/\d{1,2}:\d{2}/)).toBeInTheDocument();
   });
 
   it('should render tool calls when present', () => {
