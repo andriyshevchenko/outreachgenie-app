@@ -12,9 +12,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./server
 
     steps:
       - name: Checkout repository
@@ -32,17 +29,10 @@ jobs:
           docker info
 
       - name: Restore dependencies
-        run: dotnet restore OutreachGenie.slnx
+        run: dotnet restore
 
       - name: Build
-        run: dotnet build OutreachGenie.slnx --no-restore --configuration Release
+        run: dotnet build --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test OutreachGenie.slnx --no-build --configuration Release --filter "FullyQualifiedName!~IntegrationTests&FullyQualifiedName!~LlmProviderIntegrationTests" --verbosity normal --logger "trx;LogFileName=unit-tests.trx" --results-directory ./TestResults
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: unit-test-results
-          path: server/TestResults/**/*
+        run: dotnet test --no-build --configuration Release --verbosity normal
