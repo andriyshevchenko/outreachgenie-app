@@ -61,26 +61,39 @@ server/OutreachGenie.Api/Services/
    ```csharp
    public class AgentConfiguration
    {
-       public int PollingIntervalMs { get; set; } = 60000; // 1 minute
-       public int MaxConcurrentCampaigns { get; set; } = 3;
+       public int PollingIntervalMs { get; init; } = 60000; // 1 minute
+       public int MaxConcurrentCampaigns { get; init; } = 1;  // Avoid LinkedIn rate limits
    }
    ```
 
 **What This Enables**:
 - ✅ Campaigns automatically process in background
-- ✅ Agent navigates LinkedIn via Playwright MCP
+- ✅ Agent navigates LinkedIn via Playwright MCP (headed browser)
+- ✅ Uses Desktop Commander MCP for:
+  - Excel operations (lead lists in .xlsx format)
+  - PDF generation (campaign reports)
+  - Python in-memory data analysis
+  - File system operations
 - ✅ Leads are extracted and scored
 - ✅ Artifacts are created with real data
 - ✅ SignalR events notify UI in real-time
 - ✅ Campaign status updates: Initializing → Active → Completed
 
+**MCP Tools Available**:
+- **Playwright**: LinkedIn automation, JavaScript execution, screenshots
+- **Desktop Commander**: Excel, PDF, Python, file system, terminal (see spec for full capabilities)
+- **Fetch**: HTTP requests for APIs
+- **Exa**: AI-powered web search
+
 **Success Criteria**:
 - ✅ Service starts with application
 - ✅ Polls for active campaigns every 60 seconds
-- ✅ Processes campaigns concurrently (max 3)
+- ✅ Processes 1 campaign at a time (avoid LinkedIn rate limits)
 - ✅ Handles errors gracefully with retry logic
 - ✅ Logs all operations
 - ✅ Campaigns transition through state machine correctly
+- ✅ Loads LinkedIn cookies from database (DPAPI/Keychain encrypted)
+- ✅ Detects expired cookies and emits SignalR notification
 
 **Estimated**: 6-9 hours
 
@@ -247,62 +260,102 @@ Status: Completed
 
 ---
 
-### [ ] Secure End-User Secrets (Windows & Mac)
+### [ ] Secure End-User Secrets (Database + DPAPI/Keychain)
 **Priority**: 🟡 MEDIUM - Users need secure credential storage
-**Status**: NOT IMPLEMENTED
+**Status**: ARCHITECTURE DEFINED, NOT IMPLEMENTED
 
 **Context**: App installs on user machines - users enter their own API keys
 
-**Problem**: No secure storage for end-user credentials:
-- Users' OpenAI API keys currently in plain text config
-- Users' LinkedIn session cookies in plain text
-- Need OS-level credential manager integration
+**Architecture Decision**: Store all secrets in **database** with OS-level encryption:
+- OpenAI API keys
+- Exa API keys
+- LinkedIn session cookies
+- Any future credentials
 
-**Windows Solution**: Windows Credential Manager via CredentialManagement NuGet
+**Database Entities**:
+
 ```csharp
-// Install: CredentialManagement (Windows only)
-// Store API key
-using (var cred = new Credential())
+// UserSecret entity for API keys
+public sealed class UserSecret
 {
-    cred.Target = "OutreachGenie.OpenAI";
-    cred.Username = "ApiKey";
-    cred.Password = apiKey;
-    cred.Type = CredentialType.Generic;
-    cred.PersistanceType = PersistanceType.LocalMachine;
-    cred.Save();
+    public Guid Id { get; init; }
+    public string Key { get; init; }           // "OpenAI.ApiKey", "Exa.ApiKey"
+    public byte[] EncryptedValue { get; init; } // OS-encrypted blob
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+}
+
+// LinkedInSession entity for cookies
+public sealed class LinkedInSession
+{
+    public Guid Id { get; init; }
+    public Guid CampaignId { get; init; }
+    public byte[] EncryptedCookies { get; init; }  // DPAPI/Keychain encrypted
+    public DateTime ExpiresAt { get; init; }
+    public DateTime CreatedAt { get; init; }
 }
 ```
 
-**macOS Solution**: macOS Keychain via security command
-```bash
-# Store via CLI
-security add-generic-password -a "OutreachGenie" -s "OpenAI.ApiKey" -w "sk-..."
+**Encryption Implementation**:
 
-# Retrieve in C#
+**Windows (DPAPI)**:
+```csharp
+using System.Security.Cryptography;
+
+// Encrypt
+byte[] plaintext = Encoding.UTF8.GetBytes(apiKey);
+byte[] encrypted = ProtectedData.Protect(
+    plaintext,
+    optionalEntropy: null,
+    scope: DataProtectionScope.CurrentUser  // Tied to user account
+);
+
+// Decrypt
+byte[] decrypted = ProtectedData.Unprotect(encrypted, null, DataProtectionScope.CurrentUser);
+string apiKey = Encoding.UTF8.GetString(decrypted);
+```
+
+**macOS (Keychain)**:
+```csharp
+// Store via security command
+Process.Start("security", "add-generic-password -a OutreachGenie -s OpenAI.ApiKey -w sk-...");
+
+// Retrieve
 var process = Process.Start(new ProcessStartInfo
 {
     FileName = "security",
     Arguments = "find-generic-password -a OutreachGenie -s OpenAI.ApiKey -w",
     RedirectStandardOutput = true
 });
-var apiKey = process.StandardOutput.ReadToEnd().Trim();
+string apiKey = process.StandardOutput.ReadToEnd().Trim();
 ```
 
 **Implementation Steps**:
-1. Create `ISecureStorage` interface (Windows + Mac implementations)
-2. Add NuGet: `CredentialManagement` (Windows), use `security` CLI (Mac)
-3. Update SettingsController to use secure storage for API keys
-4. Update frontend Settings page with "Save Securely" button
-5. Migrate existing plain-text settings on first launch
-6. Show "🔒 Secured" badge for stored credentials
+1. Create `UserSecret` and `LinkedInSession` entities in Domain
+2. Create corresponding repositories in Infrastructure
+3. Add EF Core migrations for new tables
+4. Create `ISecureStorageService` interface with platform-specific implementations
+5. Update SettingsController to use `UserSecret` repository
+6. Update AgentHostedService to load `LinkedInSession` for campaigns
+7. Update frontend Settings page with "Save Securely" button
+8. Show "🔒 Secured" badge for stored credentials
 
 **User Experience**:
 - Settings page: Enter API key → Click "Save Securely"
-- App stores in OS credential manager
+- App encrypts and stores in database
 - Confirm with "✓ API Key Secured" message
 - Never show actual key again (only "••••••••" mask)
 
-**Estimated**: 1-2 hours
+**Security Benefits**:
+- ✅ No plaintext secrets in files or database
+- ✅ Encryption tied to user's OS account
+- ✅ Cannot be decrypted by other users on same machine
+- ✅ Survives app restarts and context loss
+- ✅ Per-user, per-machine isolation
+
+**Reference**: See `history/agent_specification_deterministic_desktop_outreach_agent.md` section 4.2-4.3
+
+**Estimated**: 3-4 hours
 
 ---
 
