@@ -56,10 +56,27 @@ jobs:
         run: |
           timeout 60 bash -c 'until curl -f http://localhost:5000/api/v1/campaign; do sleep 2; done'
 
+      - name: Start frontend dev server
+        run: |
+          npm run dev &
+          echo $! > frontend.pid
+          sleep 5
+
+      - name: Wait for frontend to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:8081; do sleep 2; done'
+
       - name: Run E2E tests
         run: npx playwright test --reporter=list
         env:
           CI: true
+
+      - name: Stop frontend dev server
+        if: always()
+        run: |
+          if [ -f frontend.pid ]; then
+            kill $(cat frontend.pid) || true
+          fi
 
       - name: Stop backend API
         if: always()

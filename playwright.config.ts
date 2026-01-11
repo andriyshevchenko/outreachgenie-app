@@ -23,7 +23,8 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
+  // Don't auto-start server in CI - workflow handles it
+  webServer: process.env.CI ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:8081',
     reuseExistingServer: !process.env.CI,
