@@ -20,7 +20,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 
-// Configuration
+const HEADER_WIDTH = 80;
+
 const config = {
   excludeDirs: [
     'node_modules',
@@ -68,20 +69,21 @@ function runCloc(options = {}) {
     return output;
   } catch (error) {
     console.error('Error running cloc:', error.message);
+    console.error('Try running: npm install');
     process.exit(1);
   }
 }
 
 function printHeader() {
-  console.log('\n' + '='.repeat(80));
+  console.log('\n' + '='.repeat(HEADER_WIDTH));
   console.log('  OutreachGenie SLOC (Source Lines of Code) Report');
-  console.log('='.repeat(80) + '\n');
+  console.log('='.repeat(HEADER_WIDTH) + '\n');
 }
 
 function printFooter() {
-  console.log('\n' + '='.repeat(80));
+  console.log('\n' + '='.repeat(HEADER_WIDTH));
   console.log('  Report generated: ' + new Date().toISOString());
-  console.log('='.repeat(80) + '\n');
+  console.log('='.repeat(HEADER_WIDTH) + '\n');
 }
 
 function main() {
