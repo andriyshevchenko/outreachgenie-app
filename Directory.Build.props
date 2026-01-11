@@ -1,0 +1,16 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!-- Code Quality Analyzers -->
+  <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' And '$(ProjectName)' != 'OutreachGenie.AppHost' And '$(IsTestProject)' != 'true'">
+    <PackageReference Include="StyleCop.Analyzers" />
+    <PackageReference Include="SonarAnalyzer.CSharp" />
+  </ItemGroup>
+</Project>
