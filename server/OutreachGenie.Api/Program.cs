@@ -38,6 +38,18 @@ builder.Services.AddScoped<ILeadRepository, LeadRepository>();
 
 builder.Services.AddControllers();
 
+// Add CORS support for React frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:8080", "https://localhost:8080", "http://localhost:8081", "https://localhost:8081")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
 // Apply migrations and initialize database on startup (skip for InMemory in tests)
@@ -56,6 +68,9 @@ using (var scope = app.Services.CreateScope())
 
 // Add Serilog request logging
 app.UseSerilogRequestLogging();
+
+// Enable CORS
+app.UseCors("AllowReactFrontend");
 
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
