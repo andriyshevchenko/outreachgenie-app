@@ -1,6 +1,6 @@
 # OutreachGenie Backend Implementation TODO
 
-> **Status**: 9/24 tasks completed
+> **Status**: 10/24 tasks completed
 > **Last Updated**: January 11, 2026
 
 ---
@@ -176,16 +176,18 @@
 - Temperature/max tokens configuration ✅
 **Proposal Schema**: Action type, task ID, parameters ✅
 
-### [ ] 16. Implement lead scoring service
+### [X] 16. Implement lead scoring service
 **Priority**: High  
-**Algorithm**: Weighted heuristics on search results only  
+**Completed**: January 11, 2026
+**Algorithm**: Weighted heuristics on search results only ✅
 **Factors**:
-- Job title relevance to campaign target
-- Headline keyword matching
-- Location alignment
-- Connection degree (if visible)
-**Configuration**: Stored as `heuristics` artifact (user-editable JSON)  
-**Constraints**: No profile visits (per requirement #8)
+- Job title relevance to campaign target ✅
+- Headline keyword matching ✅
+- Location alignment ✅
+- Connection degree (if visible) - Future enhancement
+**Configuration**: Stored as `heuristics` artifact (user-editable JSON) ✅
+**Constraints**: No profile visits (per requirement #8) ✅
+**Implementation**: LeadScoringService with 7 unit tests ✅
 
 ### [ ] 17. Implement campaign resume/recovery logic
 **Priority**: Critical (MVP validation)  
