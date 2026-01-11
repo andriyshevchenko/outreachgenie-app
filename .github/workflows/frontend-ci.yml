@@ -29,13 +29,16 @@ jobs:
       
       - name: Run linter
         run: npm run lint
-        continue-on-error: true
+      
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit
       
       - name: Build application
         run: npm run build
       
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: build-artifacts
           path: dist/
