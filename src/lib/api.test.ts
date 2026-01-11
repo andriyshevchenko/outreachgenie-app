@@ -83,7 +83,7 @@ describe('ApiClient', () => {
       const result = await apiClient.getCampaigns();
       
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:5000/api/v1/campaign/list',
+        'http://localhost:5000/api/v1/campaign',
         expect.any(Object)
       );
       expect(result).toEqual(mockCampaigns);
@@ -100,7 +100,7 @@ describe('ApiClient', () => {
       const result = await apiClient.getCampaign('123');
       
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:5000/api/v1/campaign/get/123',
+        'http://localhost:5000/api/v1/campaign/123',
         expect.any(Object)
       );
       expect(result).toEqual(mockCampaign);
@@ -119,7 +119,7 @@ describe('ApiClient', () => {
       const result = await apiClient.createCampaign(request);
       
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:5000/api/v1/campaign/create',
+        'http://localhost:5000/api/v1/campaign',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(request),
@@ -138,7 +138,7 @@ describe('ApiClient', () => {
       await apiClient.pauseCampaign('123');
       
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:5000/api/v1/campaign/pause/123',
+        'http://localhost:5000/api/v1/campaign/123/pause',
         expect.objectContaining({
           method: 'POST',
         })
@@ -155,7 +155,7 @@ describe('ApiClient', () => {
       await apiClient.resumeCampaign('123');
       
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:5000/api/v1/campaign/resume/123',
+        'http://localhost:5000/api/v1/campaign/123/resume',
         expect.objectContaining({
           method: 'POST',
         })
@@ -172,7 +172,7 @@ describe('ApiClient', () => {
       await apiClient.deleteCampaign('123');
       
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:5000/api/v1/campaign/delete/123',
+        'http://localhost:5000/api/v1/campaign/123',
         expect.objectContaining({
           method: 'DELETE',
         })
