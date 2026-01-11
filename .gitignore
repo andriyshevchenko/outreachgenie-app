@@ -241,3 +241,5 @@ FakesAssemblies/
 
 # JetBrains Rider
 *.sln.iml
+
+playwright-report/
