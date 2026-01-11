@@ -1,73 +1,126 @@
-# Welcome to your Lovable project
+# OutreachGenie Frontend
 
-## Project info
+A modern React application for LinkedIn outreach automation with real-time updates and a clean, accessible UI.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🎯 Overview
 
-## How can I edit this code?
+This is the frontend application for OutreachGenie, built with React 18, TypeScript, and shadcn/ui. It provides an intuitive interface for managing outreach campaigns, viewing analytics, and interacting with the AI agent.
 
-There are several ways of editing your application.
+## 🏗️ Technology Stack
 
-**Use Lovable**
+- **React 18** - Modern React with hooks
+- **TypeScript** - Type-safe development
+- **Vite** - Fast build tool and dev server
+- **shadcn/ui** - Beautiful, accessible UI components
+- **TanStack Query** - Powerful data fetching and caching
+- **Tailwind CSS** - Utility-first styling
+- **SignalR** - Real-time updates from backend
+- **Vitest** - Fast unit testing
+- **Playwright** - End-to-end testing
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## 🚀 Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js 18 or higher
+- npm or yarn
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
+# Clone the repository
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📋 Available Scripts
 
-**Use GitHub Codespaces**
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run build:dev` - Build in development mode
+- `npm run lint` - Run ESLint
+- `npm run preview` - Preview production build
+- `npm test` - Run unit tests
+- `npm run test:ui` - Run tests with UI
+- `npm run test:coverage` - Generate coverage report
+- `npm run test:e2e` - Run end-to-end tests
+- `npm run test:e2e:ui` - Run E2E tests with UI
+- `npm run test:e2e:debug` - Debug E2E tests
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🧪 Testing
 
-## What technologies are used for this project?
+This project maintains high test coverage:
 
-This project is built with:
+- Unit tests with Vitest and React Testing Library
+- E2E tests with Playwright
+- Coverage requirements: ≥90% statements, ≥85% branches
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+See [frontend.md](./frontend.md) for detailed testing guidelines and quality standards.
 
-## How can I deploy this project?
+## 📁 Project Structure
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+```
+src/
+├── components/       # Reusable UI components
+│   ├── chat/        # Chat-related components
+│   ├── layout/      # Layout components (Sidebar, etc.)
+│   └── ui/          # shadcn/ui components
+├── pages/           # Page components
+├── lib/             # Utilities and helpers
+│   ├── api.ts      # API client
+│   └── signalr.ts  # SignalR connection
+├── test/            # Test setup and utilities
+└── types/           # TypeScript type definitions
+```
 
-## Can I connect a custom domain to my Lovable project?
+## 🔗 Backend Integration
 
-Yes, you can!
+This frontend connects to the OutreachGenie backend API:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- REST API for CRUD operations
+- SignalR for real-time updates
+- Backend should be running on `http://localhost:5000`
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 📖 Documentation
+
+- [frontend.md](./frontend.md) - Code quality rules and standards
+- Component documentation in Storybook (coming soon)
+
+## 🎨 Design System
+
+This project uses shadcn/ui components with Tailwind CSS. All components follow:
+
+- Accessibility best practices (ARIA, keyboard navigation)
+- Consistent design tokens
+- Dark mode support (via next-themes)
+
+## 🚢 Deployment
+
+Build the production bundle:
+
+```bash
+npm run build
+```
+
+The built files will be in the `dist/` directory, ready to deploy to any static hosting service (Netlify, Vercel, etc.).
+
+## 🤝 Contributing
+
+Please follow the coding standards defined in [frontend.md](./frontend.md):
+
+- Type safety (no `any`)
+- Pure, deterministic components
+- Comprehensive testing
+- Accessible UI
+
+## 📝 License
+
+[Add your license here]
