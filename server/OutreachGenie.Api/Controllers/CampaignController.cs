@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 using Microsoft.AspNetCore.Mvc;
+using OutreachGenie.Api.Services;
 using OutreachGenie.Application.Interfaces;
 using OutreachGenie.Domain.Entities;
 using OutreachGenie.Domain.Enums;
@@ -14,7 +15,9 @@ namespace OutreachGenie.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/v1/[controller]")]
-public sealed class CampaignController(ICampaignRepository campaigns) : ControllerBase
+public sealed class CampaignController(
+    ICampaignRepository campaigns,
+    IAgentNotificationService notifications) : ControllerBase
 {
     /// <summary>
     /// Creates a new campaign.
@@ -43,6 +46,7 @@ public sealed class CampaignController(ICampaignRepository campaigns) : Controll
                 Guid.NewGuid().ToString()),
         };
         await campaigns.CreateAsync(campaign, cancellationToken);
+        await notifications.NotifyCampaignStateChanged(campaign.Id.ToString(), campaign.Status.ToString());
         return CreatedAtAction(nameof(Get), new { id = campaign.Id }, campaign);
     }
 
@@ -99,6 +103,7 @@ public sealed class CampaignController(ICampaignRepository campaigns) : Controll
         campaign.Status = CampaignStatus.Paused;
         campaign.UpdatedAt = DateTime.UtcNow;
         await campaigns.UpdateAsync(campaign, cancellationToken);
+        await notifications.NotifyCampaignStateChanged(campaign.Id.ToString(), campaign.Status.ToString());
         return NoContent();
     }
 
@@ -125,6 +130,7 @@ public sealed class CampaignController(ICampaignRepository campaigns) : Controll
         campaign.Status = CampaignStatus.Active;
         campaign.UpdatedAt = DateTime.UtcNow;
         await campaigns.UpdateAsync(campaign, cancellationToken);
+        await notifications.NotifyCampaignStateChanged(campaign.Id.ToString(), campaign.Status.ToString());
         return NoContent();
     }
 

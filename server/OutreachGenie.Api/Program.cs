@@ -36,7 +36,13 @@ builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<IArtifactRepository, ArtifactRepository>();
 builder.Services.AddScoped<ILeadRepository, LeadRepository>();
 
+// Register SignalR notification service
+builder.Services.AddScoped<OutreachGenie.Api.Services.IAgentNotificationService, OutreachGenie.Api.Services.AgentNotificationService>();
+
 builder.Services.AddControllers();
+
+// Add SignalR
+builder.Services.AddSignalR();
 
 // Add CORS support for React frontend
 builder.Services.AddCors(options =>
@@ -46,7 +52,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:8080", "https://localhost:8080", "http://localhost:8081", "https://localhost:8081")
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowCredentials(); // Required for SignalR
     });
 });
 
@@ -78,6 +84,9 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Map SignalR hub
+app.MapHub<OutreachGenie.Api.Hubs.AgentHub>("/hubs/agent");
 
 await app.RunAsync();
 
