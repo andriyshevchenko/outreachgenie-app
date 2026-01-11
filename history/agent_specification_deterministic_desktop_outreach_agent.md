@@ -193,18 +193,169 @@ await _artifactRepo.CreateAsync(new Artifact {
 **Lifecycle**: Singleton (shared across all campaigns)
 
 **Registered Servers**:
-1. **Playwright** (`npx -y @modelcontextprotocol/server-playwright`)
-   - Headed mode for LinkedIn automation
-   - Cookie persistence per campaign
-2. **Desktop Commander** (custom path or npx)
-   - File system operations
-   - CLI command execution
-3. **Fetch** (`npx -y @modelcontextprotocol/server-fetch`)
-   - HTTP requests
-4. **Exa** (`npx -y @modelcontextprotocol/server-exa`)
-   - AI-powered web search
+
+#### 1. Playwright MCP (`npx -y @modelcontextprotocol/server-playwright`)
+**Purpose**: LinkedIn browser automation
+
+**Capabilities**:
+- Navigate to URLs
+- Click elements, fill forms, type text
+- Execute JavaScript in browser context
+- Take screenshots
+- Handle browser cookies (save/load)
+- Headed mode (user can see browser)
+
+**Usage for LinkedIn**:
+- Navigate to LinkedIn Sales Navigator
+- Apply search filters
+- Extract profile data via JavaScript
+- Screenshot search results
+- Persist session cookies
+
+#### 2. Desktop Commander MCP
+**Purpose**: File system, data analysis, and system operations
+
+**Key Capabilities for End Users**:
+
+**📊 Excel File Operations** (Native support - no external tools):
+- Read Excel files (.xlsx, .xls, .xlsm)
+- Write/create Excel files
+- Edit specific cells or ranges
+- Search content within Excel files
+- Full spreadsheet manipulation
+
+**📄 PDF Operations**:
+- Read PDFs with text extraction
+- Create new PDFs from markdown
+- Modify existing PDFs (add pages, delete pages)
+- PDF content search
+
+**🐍 Python Script Execution** (In-memory):
+- Execute Python code without saving files
+- Instant data analysis on CSV/JSON/Excel
+- Access to pandas, numpy, matplotlib
+- Results returned directly to agent
+- No file artifacts left on disk
+
+**💾 File System Operations**:
+- Read/write text files (with negative offset support)
+- Create/list/move directories
+- Search files by name or content
+- Get file metadata
+- Surgical text replacements (edit_block)
+- Full file rewrites
+
+**⚙️ Terminal Commands**:
+- Execute shell commands with streaming output
+- Interactive process control (SSH, databases)
+- Background execution with timeout support
+- Process management (list/kill processes)
+- Session management for long-running commands
+
+**🔍 Advanced Search**:
+- vscode-ripgrep based recursive search
+- Search files by pattern
+- Search content within files (including Excel)
+- Fast and efficient codebase navigation
+
+**Example Agent Workflows**:
+```
+1. Analyze Lead Data:
+   - Agent: "I have leads in leads.xlsx, let me analyze them"
+   - Tool: read_file(path="leads.xlsx", range="A1:Z100")
+   - Agent: Processes data, scores leads
+   - Tool: write_file(path="scored_leads.xlsx", content=[[...]])
+
+2. Extract LinkedIn Profiles to Excel:
+   - Tool: Playwright navigates LinkedIn
+   - Tool: JavaScript extracts profile data
+   - Agent: Structures data as Excel rows
+   - Tool: Desktop Commander writes to Excel file
+   - User: Opens Excel, sees all leads with scores
+
+3. Data Analysis with Python:
+   - Agent: "Let me analyze engagement patterns"
+   - Tool: start_process(command="python3 -i")
+   - Tool: interact_with_process("import pandas as pd")
+   - Tool: interact_with_process("df = pd.read_excel('leads.xlsx')")
+   - Tool: interact_with_process("print(df.describe())")
+   - Agent: Interprets results, makes recommendations
+
+4. Generate PDF Reports:
+   - Agent: Creates markdown with campaign results
+   - Tool: write_pdf(path="campaign_report.pdf", content="# Results...")
+   - User: Professional PDF report ready to share
+```
+
+**Audit Logging**:
+- All Desktop Commander tool calls automatically logged
+- Log rotation (10MB size limit)
+- Timestamps and arguments preserved
+- Useful for debugging and compliance
+
+#### 3. Fetch MCP (`npx -y @modelcontextprotocol/server-fetch`)
+**Purpose**: HTTP requests
+
+**Capabilities**:
+- GET/POST/PUT/DELETE requests
+- Custom headers
+- JSON/text response handling
+- API integration
+
+**Usage**:
+- Fetch company data from public APIs
+- Verify email addresses
+- Enrich lead data
+
+#### 4. Exa MCP (`npx -y @modelcontextprotocol/server-exa`)
+**Purpose**: AI-powered web search
+
+**Capabilities**:
+- Semantic search across web
+- Company research
+- Industry trend analysis
+- Competitor analysis
+
+**Usage**:
+- Research companies before outreach
+- Find relevant talking points
+- Validate prospect information
+- Discover company news
 
 **Transport**: `StdioMcpTransport` with JSON-RPC 2.0
+
+**LLM System Prompt Integration**:
+
+The agent's system prompt MUST include detailed tool descriptions:
+
+```
+You are a LinkedIn outreach automation agent. You have access to these tools:
+
+DESKTOP COMMANDER:
+- Excel: Read/write/edit .xlsx files natively (no converters needed)
+- PDF: Read, create, and modify PDFs
+- Python: Execute code in-memory for data analysis (pandas, numpy available)
+- File System: Read/write files, create directories, search content
+- Terminal: Execute commands, manage processes, SSH sessions
+
+PLAYWRIGHT:
+- Browser automation for LinkedIn navigation
+- JavaScript execution to extract data
+- Screenshot capture
+- Cookie management for session persistence
+
+FETCH:
+- HTTP requests for API calls
+- JSON/text response handling
+
+EXA:
+- AI-powered web search
+- Company and industry research
+
+When analyzing data, prefer Python in-memory execution over saving temporary files.
+When creating reports, use PDF generation for professional output.
+When working with lead lists, use Excel files (users expect .xlsx format).
+```
 
 ### 4.5 Error Handling & Retry Strategy
 

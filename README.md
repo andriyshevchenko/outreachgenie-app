@@ -110,15 +110,31 @@ MCP servers are called via `npx` for built-in servers:
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-playwright"]
     },
+    "desktop-commander": {
+      "command": "npx",
+      "args": ["-y", "@wonderwhy-er/desktop-commander"]
+    },
     "fetch": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-fetch"]
+    },
+    "exa": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-exa"]
     }
   }
 }
 ```
 
-Custom MCP servers can be added to `mcp.json` with absolute paths.
+Custom MCP servers can be added with absolute paths.
+
+**Desktop Commander Key Features** (End-User Focused):
+- **Excel Operations**: Native .xlsx/.xls/.xlsm support - read, write, edit cells, search content
+- **PDF Operations**: Read PDFs, create from markdown, modify existing PDFs
+- **Python Execution**: Run Python scripts in-memory for instant data analysis (pandas, numpy, matplotlib)
+- **File System**: Full file/directory operations with advanced search (vscode-ripgrep)
+- **Terminal**: Execute commands, manage processes, interactive sessions (SSH, databases)
+- **Data Analysis**: Analyze CSV/JSON/Excel files without saving temporary files
 
 ### Running the Application
 
