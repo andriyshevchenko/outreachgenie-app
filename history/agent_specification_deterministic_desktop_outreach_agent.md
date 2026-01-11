@@ -168,7 +168,97 @@ public sealed class LinkedInSession
 - No plaintext cookies on disk or in database
 - Automatic key rotation via OS mechanisms
 
-### 4.3 Chat System Implementation
+### 4.3 User Secrets Storage
+
+**All user-provided credentials are stored securely in the database**, not in configuration files.
+
+**Secrets Requiring Secure Storage**:
+- OpenAI API keys
+- Exa API keys
+- LinkedIn session cookies
+- Any future third-party API credentials
+
+**Storage Architecture**:
+
+```csharp
+// Domain entity for secure credentials
+public sealed class UserSecret
+{
+    public Guid Id { get; init; }
+    public string Key { get; init; }           // "OpenAI.ApiKey", "Exa.ApiKey"
+    public byte[] EncryptedValue { get; init; } // OS-encrypted blob
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+}
+```
+
+**Platform-Specific Encryption**:
+
+**Windows (DPAPI)**:
+```csharp
+using System.Security.Cryptography;
+
+// Encrypt
+byte[] plaintext = Encoding.UTF8.GetBytes(apiKey);
+byte[] encrypted = ProtectedData.Protect(
+    plaintext,
+    optionalEntropy: null,
+    scope: DataProtectionScope.CurrentUser  // Tied to user account
+);
+
+// Decrypt
+byte[] decrypted = ProtectedData.Unprotect(
+    encrypted,
+    optionalEntropy: null,
+    scope: DataProtectionScope.CurrentUser
+);
+string apiKey = Encoding.UTF8.GetString(decrypted);
+```
+
+**macOS (Keychain)**:
+```csharp
+// Via security command-line tool
+// Store
+Process.Start("security", "add-generic-password -a OutreachGenie -s OpenAI.ApiKey -w sk-...");
+
+// Retrieve
+var process = Process.Start(new ProcessStartInfo {
+    FileName = "security",
+    Arguments = "find-generic-password -a OutreachGenie -s OpenAI.ApiKey -w",
+    RedirectStandardOutput = true
+});
+string apiKey = process.StandardOutput.ReadToEnd().Trim();
+```
+
+**User Experience Flow**:
+
+1. **First Launch**:
+   - User opens Settings page
+   - Enters OpenAI API key
+   - Clicks "Save Securely"
+   - Key encrypted and stored in database
+   - UI confirms: "✓ API Key Secured"
+
+2. **Subsequent Use**:
+   - App loads encrypted key from database
+   - Decrypts transparently using OS APIs
+   - Never displays actual key (shows "••••••••" mask)
+   - User can update/delete keys via Settings UI
+
+3. **Development Mode**:
+   - `.env` file used for local development only
+   - Production ignores `.env` and uses database storage
+   - Clear documentation that `.env` is not for production
+
+**Security Properties**:
+- ✅ No plaintext secrets in files or database
+- ✅ Encryption tied to user's OS account
+- ✅ Cannot be decrypted by other users on same machine
+- ✅ Survives app restarts and context loss
+- ✅ Keys isolated per-user, per-machine
+- ✅ No application-level key management needed
+
+### 4.4 Chat System Implementation
 
 **Storage**: Chat messages stored as Artifacts with `type="chat"`
 
@@ -370,7 +460,7 @@ When creating reports, use PDF generation for professional output.
 When working with lead lists, use Excel files (users expect .xlsx format).
 ```
 
-### 4.5 Error Handling & Retry Strategy
+### 4.6 Error Handling & Retry Strategy
 
 **Controller Retry Logic**:
 - **Per-task retries**: 3 attempts with exponential backoff (1s, 2s, 4s)

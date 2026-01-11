@@ -81,13 +81,13 @@ cd ../..
 
 ### Environment Configuration
 
-Create `.env` file in project root:
+**Development Mode**: Create `.env` file in project root:
 
 ```env
-# LLM Provider (OpenAI)
+# LLM Provider (OpenAI) - DEVELOPMENT ONLY
 OPENAI_API_KEY=your_key_here
 
-# Web Search (Exa)
+# Web Search (Exa) - DEVELOPMENT ONLY
 EXA_API_KEY=your_key_here
 
 # Agent Configuration
@@ -95,11 +95,19 @@ POLLING_INTERVAL_MS=60000
 MAX_CONCURRENT_CAMPAIGNS=1
 ```
 
-**LinkedIn Session Security**: Cookies are stored in the database and automatically encrypted via OS-level security:
-- **Windows**: DPAPI (Data Protection API) - encryption tied to user account
-- **macOS**: Keychain API - secure credential storage
+**Production Mode (End Users)**: All secrets stored securely in database:
+- Users enter API keys through Settings UI
+- Keys encrypted via OS-level security:
+  - **Windows**: DPAPI (Data Protection API) - tied to user account
+  - **macOS**: Keychain API - secure credential storage
+- No plaintext secrets in files or database
+- LinkedIn session cookies also encrypted and stored in database
 
-No additional configuration needed for cookie encryption.
+**Secure Storage Architecture**:
+- `UserSecret` entity stores encrypted credentials
+- `LinkedInSession` entity stores encrypted cookies
+- Encryption/decryption transparent to application
+- Keys isolated per-user, per-machine
 
 ### MCP Server Configuration
 
