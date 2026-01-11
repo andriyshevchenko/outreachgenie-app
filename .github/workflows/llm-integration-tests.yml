@@ -1,19 +1,16 @@
 name: LLM Integration Tests
 
 on:
-  # Only run manually or on schedule to avoid API costs
-  workflow_dispatch:
-    inputs:
-      llm_provider:
-        description: 'LLM Provider to test'
-        required: false
-        default: 'OpenAI'
-        type: choice
-        options:
-          - OpenAI
-          - All
+  push:
+    branches:
+      - feature/integration-tests-complete
+      - main
+  pull_request:
+    branches:
+      - main
   schedule:
     - cron: '0 3 * * 0'  # Run weekly on Sundays at 3 AM UTC
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   llm-integration-tests:
