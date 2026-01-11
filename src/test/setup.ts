@@ -31,7 +31,7 @@ global.IntersectionObserver = class IntersectionObserver {
     return [];
   }
   unobserve() {}
-} as any;
+} as unknown as IntersectionObserver;
 
 // Mock ResizeObserver for radix-ui components
 global.ResizeObserver = class ResizeObserver {
@@ -39,7 +39,7 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
   observe() {}
   unobserve() {}
-} as any;
+} as unknown as ResizeObserver;
 
 // Mock Element.prototype.scrollIntoView for scroll tests
 Element.prototype.scrollIntoView = vi.fn();

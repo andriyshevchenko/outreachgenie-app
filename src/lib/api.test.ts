@@ -12,7 +12,7 @@ describe('ApiClient', () => {
   describe('request method', () => {
     it('should make successful GET request and return JSON', async () => {
       const mockData = { id: '123', name: 'Test Campaign' };
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockData,
@@ -32,7 +32,7 @@ describe('ApiClient', () => {
     });
 
     it('should handle non-JSON responses', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'text/plain' }),
       });
@@ -43,7 +43,7 @@ describe('ApiClient', () => {
 
     it('should throw ApiError on HTTP error', async () => {
       const errorData = { message: 'Not found', code: 'NOT_FOUND' };
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: false,
         status: 404,
         statusText: 'Not Found',
@@ -59,7 +59,7 @@ describe('ApiClient', () => {
     });
 
     it('should handle network errors', async () => {
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network failure'));
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Network failure'));
 
       await expect(apiClient['request']('/api/test')).rejects.toMatchObject({
         statusCode: 0,
@@ -74,7 +74,7 @@ describe('ApiClient', () => {
         { id: '1', name: 'Campaign 1', status: CampaignStatus.Active, targetAudience: 'CTOs', createdAt: '2026-01-11T00:00:00Z', updatedAt: '2026-01-11T00:00:00Z' },
         { id: '2', name: 'Campaign 2', status: CampaignStatus.Paused, targetAudience: 'CEOs', createdAt: '2026-01-11T00:00:00Z', updatedAt: '2026-01-11T00:00:00Z' },
       ];
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockCampaigns,
@@ -91,7 +91,7 @@ describe('ApiClient', () => {
 
     it('should get single campaign by ID', async () => {
       const mockCampaign = { id: '123', name: 'Test', status: CampaignStatus.Active, targetAudience: 'VPs', createdAt: '2026-01-11T00:00:00Z', updatedAt: '2026-01-11T00:00:00Z' };
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockCampaign,
@@ -110,7 +110,7 @@ describe('ApiClient', () => {
       const request = { name: 'New Campaign', targetAudience: 'Developers' };
       const mockResponse = { id: '456', ...request, status: CampaignStatus.Draft, createdAt: '2026-01-11T00:00:00Z', updatedAt: '2026-01-11T00:00:00Z' };
       
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockResponse,
@@ -129,7 +129,7 @@ describe('ApiClient', () => {
     });
 
     it('should pause campaign', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => ({}),
@@ -146,7 +146,7 @@ describe('ApiClient', () => {
     });
 
     it('should resume campaign', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => ({}),
@@ -163,7 +163,7 @@ describe('ApiClient', () => {
     });
 
     it('should delete campaign', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => ({}),
@@ -187,7 +187,7 @@ describe('ApiClient', () => {
         content: 'Agent response',
         timestamp: '2026-01-11T15:00:00Z',
       };
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockResponse,
@@ -214,7 +214,7 @@ describe('ApiClient', () => {
         content: 'Agent response',
         timestamp: '2026-01-11T15:00:00Z',
       };
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockResponse,
@@ -238,7 +238,7 @@ describe('ApiClient', () => {
         { id: '1', campaignId: '123', role: 'user', content: 'Hello', timestamp: '2026-01-11T15:00:00Z' },
         { id: '2', campaignId: '123', role: 'assistant', content: 'Hi there', timestamp: '2026-01-11T15:00:01Z' },
       ];
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockHistory,
@@ -259,7 +259,7 @@ describe('ApiClient', () => {
       const mockTasks = [
         { id: '1', campaignId: '123', description: 'Task 1', status: TaskStatus.Pending, type: 'Test', input: null, output: null, retryCount: 0, createdAt: '2026-01-11T00:00:00Z', updatedAt: '2026-01-11T00:00:00Z' },
       ];
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockTasks,
@@ -276,7 +276,7 @@ describe('ApiClient', () => {
 
     it('should get single task by ID', async () => {
       const mockTask = { id: '1', campaignId: '123', description: 'Task 1', status: TaskStatus.Done, type: 'Test', input: null, output: null, retryCount: 0, createdAt: '2026-01-11T00:00:00Z', updatedAt: '2026-01-11T00:00:00Z' };
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockTask,
@@ -297,7 +297,7 @@ describe('ApiClient', () => {
       const mockArtifacts = [
         { id: '1', campaignId: '123', type: 'context', key: 'main', content: '{}', source: ArtifactSource.User, version: 1, createdAt: '2026-01-11T00:00:00Z' },
       ];
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockArtifacts,
@@ -316,7 +316,7 @@ describe('ApiClient', () => {
       const mockArtifacts = [
         { id: '1', campaignId: '123', type: 'leads', key: 'main', content: '[]', source: ArtifactSource.Agent, version: 1, createdAt: '2026-01-11T00:00:00Z' },
       ];
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockArtifacts,
@@ -332,7 +332,7 @@ describe('ApiClient', () => {
 
     it('should get specific artifact', async () => {
       const mockArtifact = { id: '1', campaignId: '123', type: 'context', key: 'main', content: '{}', source: ArtifactSource.User, version: 1, createdAt: '2026-01-11T00:00:00Z' };
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockArtifact,
@@ -357,7 +357,7 @@ describe('ApiClient', () => {
       };
       const mockResponse = { id: '1', ...request, version: 1, createdAt: '2026-01-11T00:00:00Z' };
       
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockResponse,
@@ -384,7 +384,7 @@ describe('ApiClient', () => {
         maxTokens: 4096,
         temperature: 0.7,
       };
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => mockSettings,
@@ -406,7 +406,7 @@ describe('ApiClient', () => {
         maxTokens: 8192,
         temperature: 0.8,
       };
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => ({}),

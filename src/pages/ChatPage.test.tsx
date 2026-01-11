@@ -52,7 +52,7 @@ describe('ChatPage', () => {
       timestamp: '2026-01-11T15:00:00Z',
     };
     
-    (api.apiClient.sendMessage as any).mockResolvedValueOnce(mockResponse);
+    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockResponse);
     
     render(<ChatPage />);
     
@@ -77,12 +77,12 @@ describe('ChatPage', () => {
 
   it('should show typing indicator while waiting for response', async () => {
     const user = userEvent.setup();
-    let resolvePromise: (value: any) => void;
+    let resolvePromise: (value: unknown) => void;
     const promise = new Promise((resolve) => {
       resolvePromise = resolve;
     });
     
-    (api.apiClient.sendMessage as any).mockReturnValueOnce(promise);
+    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockReturnValueOnce(promise);
     
     render(<ChatPage />);
     
@@ -117,7 +117,7 @@ describe('ChatPage', () => {
       message: 'Internal Server Error',
     };
     
-    (api.apiClient.sendMessage as any).mockRejectedValueOnce(mockError);
+    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockRejectedValueOnce(mockError);
     
     render(<ChatPage />);
     
@@ -148,7 +148,7 @@ describe('ChatPage', () => {
       message: 'Network failure',
     };
     
-    (api.apiClient.sendMessage as any).mockRejectedValueOnce(mockError);
+    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockRejectedValueOnce(mockError);
     
     render(<ChatPage />);
     
@@ -173,7 +173,7 @@ describe('ChatPage', () => {
       timestamp: '2026-01-11T15:00:00Z',
     };
     
-    (api.apiClient.sendMessage as any).mockResolvedValueOnce(mockResponse);
+    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockResponse);
     
     render(<ChatPage />);
     
@@ -194,7 +194,7 @@ describe('ChatPage', () => {
       timestamp: '2026-01-11T15:00:00Z',
     };
     
-    (api.apiClient.sendMessage as any).mockResolvedValueOnce(mockResponse);
+    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockResponse);
     
     render(<ChatPage />);
     
@@ -215,7 +215,7 @@ describe('ChatPage', () => {
       timestamp: '2026-01-11T15:00:00Z',
     };
     
-    (api.apiClient.sendMessage as any).mockResolvedValueOnce(mockResponse);
+    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockResponse);
     
     const scrollIntoViewMock = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoViewMock;
