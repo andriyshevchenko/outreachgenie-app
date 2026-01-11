@@ -162,14 +162,32 @@
 **Exa Tools**: exa_search, exa_find_similar, exa_get_contents
 **Configuration**: Exa requires API key via environment variable
 
-### [ ] 14. Create first LinkedIn tool - SearchProspects
+### [X] 14. Create first LinkedIn tool - SearchProspects
 **Priority**: Critical (MVP)  
-**Tool**: `SearchLinkedInProspects`  
-**Input**: query, location, maxResults  
-**Output**: List of leads (name, title, headline, profileUrl)  
-**Implementation**: Playwright automation via MCP  
-**Storage**: Save results as `leads` artifact  
-**Scoring**: Apply heuristics, populate WeightScore
+**Completed**: January 11, 2026
+**Implementation**: LLM-driven orchestration via MCP tools
+- OpenAiLlmProvider sends campaign state + MCP tool schemas to LLM ✅
+- DeterministicController.ExecuteTaskWithLlmAsync runs multi-turn LLM loop ✅
+- ExecuteToolAsync bridges ActionProposal to MCP server calls ✅
+- Error handling: exponential backoff, JSON validation, rate limiting ✅
+- Comprehensive unit tests: 6 scenarios covering success/retry/failure paths ✅
+**Architecture**: LLM receives Playwright tools (browser_navigate, browser_evaluate, browser_screenshot, etc.), decides how to use them dynamically
+**Tool**: LLM proposes tool calls (e.g., "browser_navigate" to LinkedIn, "browser_evaluate" to extract data)
+**Input**: Task description: "Search LinkedIn for CTOs in San Francisco"  
+**Output**: LLM orchestrates navigation, extraction, storage; saves results as artifact
+**Storage**: LLM decides when to save leads artifact via Desktop Commander write_file tool
+**Scoring**: Apply LeadScoringService after extraction, populate WeightScore
+**Benefits**: No hardcoded selectors, adapts to UI changes, truly dynamic automation
+
+**Example Flow**:
+1. Controller loads state, gets MCP tools, asks LLM: "Execute task: Search LinkedIn for CTOs in SF"
+2. LLM: `{"ActionType": "browser_navigate", "Parameters": {"url": "https://linkedin.com/search"}}`
+3. Controller validates, executes via PlaywrightMcpServer, returns result
+4. LLM sees result, proposes: `{"ActionType": "browser_evaluate", "Parameters": {"function": "() => [...].map(el => el.textContent)"}}`
+5. Controller executes JS evaluation, gets prospect names/titles
+6. LLM: `{"ActionType": "write_file", "Parameters": {"path": "leads.json", "content": "[...]"}}`
+7. Controller persists artifact, LLM marks: `{"ActionType": "task_complete", "Parameters": {"result": "Found 25 prospects"}}`
+8. Controller marks task Done, saves audit logs
 
 ---
 

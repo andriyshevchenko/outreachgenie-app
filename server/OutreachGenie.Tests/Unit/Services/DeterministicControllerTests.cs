@@ -2,6 +2,8 @@ using FluentAssertions;
 using Moq;
 using OutreachGenie.Application.Interfaces;
 using OutreachGenie.Application.Services;
+using OutreachGenie.Application.Services.Llm;
+using OutreachGenie.Application.Services.Mcp;
 using OutreachGenie.Domain.Entities;
 using OutreachGenie.Domain.Enums;
 using Xunit;
@@ -18,6 +20,8 @@ public sealed class DeterministicControllerTests
     private readonly Mock<ITaskRepository> taskRepository;
     private readonly Mock<IArtifactRepository> artifactRepository;
     private readonly Mock<ILeadRepository> leadRepository;
+    private readonly Mock<ILlmProvider> llmProvider;
+    private readonly Mock<IMcpToolRegistry> mcpRegistry;
     private readonly DeterministicController controller;
 
     /// <summary>
@@ -29,11 +33,15 @@ public sealed class DeterministicControllerTests
         this.taskRepository = new Mock<ITaskRepository>();
         this.artifactRepository = new Mock<IArtifactRepository>();
         this.leadRepository = new Mock<ILeadRepository>();
+        this.llmProvider = new Mock<ILlmProvider>();
+        this.mcpRegistry = new Mock<IMcpToolRegistry>();
         this.controller = new DeterministicController(
             this.campaignRepository.Object,
             this.taskRepository.Object,
             this.artifactRepository.Object,
-            this.leadRepository.Object);
+            this.leadRepository.Object,
+            this.llmProvider.Object,
+            this.mcpRegistry.Object);
     }
 
     /// <summary>

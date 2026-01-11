@@ -1,4 +1,7 @@
+using System.Text.Json;
 using OutreachGenie.Application.Interfaces;
+using OutreachGenie.Application.Services.Llm;
+using OutreachGenie.Application.Services.Mcp;
 using OutreachGenie.Domain.Entities;
 using OutreachGenie.Domain.Enums;
 using TaskStatus = OutreachGenie.Domain.Enums.TaskStatus;
@@ -8,6 +11,7 @@ namespace OutreachGenie.Application.Services;
 /// <summary>
 /// Deterministic controller enforcing "Agent proposes, Controller decides" architecture.
 /// Reloads state at start of every cycle, validates proposals, executes actions, persists audit logs.
+/// LLM receives campaign state and available MCP tools, proposes tool calls dynamically.
 /// </summary>
 public sealed class DeterministicController
 {
@@ -15,6 +19,8 @@ public sealed class DeterministicController
     private readonly ITaskRepository tasks;
     private readonly IArtifactRepository artifacts;
     private readonly ILeadRepository leads;
+    private readonly ILlmProvider llm;
+    private readonly IMcpToolRegistry registry;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DeterministicController"/> class.
@@ -23,16 +29,22 @@ public sealed class DeterministicController
     /// <param name="tasks">Task repository.</param>
     /// <param name="artifacts">Artifact repository.</param>
     /// <param name="leads">Lead repository.</param>
+    /// <param name="llm">LLM provider for generating action proposals.</param>
+    /// <param name="registry">MCP tool registry for discovering and executing tools.</param>
     public DeterministicController(
         ICampaignRepository campaigns,
         ITaskRepository tasks,
         IArtifactRepository artifacts,
-        ILeadRepository leads)
+        ILeadRepository leads,
+        ILlmProvider llm,
+        IMcpToolRegistry registry)
     {
         this.campaigns = campaigns;
         this.tasks = tasks;
         this.artifacts = artifacts;
         this.leads = leads;
+        this.llm = llm;
+        this.registry = registry;
     }
 
     /// <summary>
@@ -210,6 +222,169 @@ public sealed class DeterministicController
     }
 
     /// <summary>
+    /// Executes task using LLM-driven orchestration with MCP tools.
+    /// Loads state, gets available tools, asks LLM for proposals, validates, executes until task complete.
+    /// </summary>
+    /// <param name="taskId">Task identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Completed task.</returns>
+    public async Task ExecuteTaskWithLlmAsync(Guid taskId, CancellationToken cancellationToken = default)
+    {
+        var task = await this.tasks.GetByIdAsync(taskId, cancellationToken);
+        if (task == null)
+        {
+            throw new InvalidOperationException($"Task {taskId} not found");
+        }
+
+        var state = await this.ReloadStateAsync(task.CampaignId, cancellationToken);
+        var validation = ValidateProposal(new ActionProposal { TaskId = taskId }, state);
+        if (!validation.IsValid)
+        {
+            throw new InvalidOperationException($"Task {taskId} is not eligible for execution");
+        }
+
+        task.Status = TaskStatus.InProgress;
+        task.StartedAt = DateTime.UtcNow;
+        await this.tasks.UpdateAsync(task, cancellationToken);
+
+        var tools = await this.registry.DiscoverToolsAsync(cancellationToken);
+        var prompt = $"Execute task: {task.Description}. Task type: {task.Type}. Use available MCP tools to complete this task.";
+        var maxIterations = 20;
+        var iteration = 0;
+        var consecutiveErrors = 0;
+        var maxConsecutiveErrors = 3;
+        while (iteration < maxIterations)
+        {
+            iteration++;
+            try
+            {
+                state = await this.ReloadStateAsync(task.CampaignId, cancellationToken);
+                ActionProposal? proposal = null;
+                var retryCount = 0;
+                var maxRetries = 3;
+                while (retryCount < maxRetries)
+                {
+                    try
+                    {
+                        proposal = await this.llm.GenerateProposalAsync(state, tools, prompt, cancellationToken);
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        retryCount++;
+                        if (retryCount >= maxRetries)
+                        {
+                            throw new InvalidOperationException($"LLM failed after {maxRetries} retries: {ex.Message}", ex);
+                        }
+
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, retryCount)), cancellationToken);
+                    }
+                }
+
+                if (proposal == null || string.IsNullOrEmpty(proposal.ActionType))
+                {
+                    consecutiveErrors++;
+                    if (consecutiveErrors >= maxConsecutiveErrors)
+                    {
+                        throw new InvalidOperationException($"LLM returned invalid proposals {consecutiveErrors} times consecutively");
+                    }
+
+                    await this.CreateAuditLogAsync(
+                        task.CampaignId,
+                        "invalid_proposal",
+                        $"{{\"iteration\":{iteration},\"error\":\"LLM returned null or empty ActionType\"}}",
+                        cancellationToken);
+                    continue;
+                }
+
+                consecutiveErrors = 0;
+                if (proposal.ActionType.Equals("task_complete", StringComparison.OrdinalIgnoreCase))
+                {
+                    await this.UpdateTaskAfterExecutionAsync(
+                        task,
+                        TaskStatus.Done,
+                        proposal.Parameters,
+                        null,
+                        cancellationToken);
+                    await this.CreateAuditLogAsync(
+                        task.CampaignId,
+                        "task_complete",
+                        $"{{\"task_id\":\"{taskId}\",\"iterations\":{iteration}}}",
+                        cancellationToken);
+                    return;
+                }
+
+                var tool = await this.registry.FindToolAsync(proposal.ActionType, cancellationToken);
+                if (tool == null)
+                {
+                    await this.CreateAuditLogAsync(
+                        task.CampaignId,
+                        "invalid_tool",
+                        $"{{\"tool_name\":\"{proposal.ActionType}\",\"task_id\":\"{taskId}\",\"iteration\":{iteration}}}",
+                        cancellationToken);
+                    prompt = $"Error: Tool '{proposal.ActionType}' not found. Available tools: {string.Join(", ", tools.Select(t => t.Name))}. Continue executing task: {task.Description}.";
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(proposal.Parameters))
+                {
+                    try
+                    {
+                        JsonDocument.Parse(proposal.Parameters);
+                    }
+                    catch (JsonException ex)
+                    {
+                        await this.CreateAuditLogAsync(
+                            task.CampaignId,
+                            "invalid_parameters",
+                            $"{{\"tool_name\":\"{proposal.ActionType}\",\"error\":\"{ex.Message}\",\"iteration\":{iteration}}}",
+                            cancellationToken);
+                        prompt = $"Error: Invalid JSON parameters for tool '{proposal.ActionType}'. Continue executing task: {task.Description}.";
+                        continue;
+                    }
+                }
+
+                var result = await this.ExecuteToolAsync(proposal, cancellationToken);
+                await this.CreateAuditLogAsync(
+                    task.CampaignId,
+                    proposal.ActionType,
+                    $"{{\"tool_name\":\"{proposal.ActionType}\",\"parameters\":{proposal.Parameters ?? "null"},\"result\":{result},\"iteration\":{iteration}}}",
+                    cancellationToken);
+                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                prompt = $"Previous action: {proposal.ActionType}. Result: {result}. Continue executing task: {task.Description}.";
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                consecutiveErrors++;
+                if (consecutiveErrors >= maxConsecutiveErrors)
+                {
+                    await this.UpdateTaskAfterExecutionAsync(
+                        task,
+                        TaskStatus.Failed,
+                        null,
+                        $"Failed after {consecutiveErrors} consecutive errors: {ex.Message}",
+                        cancellationToken);
+                    throw;
+                }
+
+                await this.CreateAuditLogAsync(
+                    task.CampaignId,
+                    "execution_error",
+                    $"{{\"iteration\":{iteration},\"error\":\"{ex.Message}\",\"type\":\"{ex.GetType().Name}\"}}",
+                    cancellationToken);
+                prompt = $"Error occurred: {ex.Message}. Try alternative approach to execute task: {task.Description}.";
+            }
+        }
+
+        await this.UpdateTaskAfterExecutionAsync(
+            task,
+            TaskStatus.Failed,
+            null,
+            $"Exceeded maximum iterations ({maxIterations})",
+            cancellationToken);
+    }
+
+    /// <summary>
     /// Validates campaign status transition.
     /// </summary>
     /// <param name="current">Current status.</param>
@@ -228,5 +403,35 @@ public sealed class DeterministicController
             (CampaignStatus.Paused, CampaignStatus.Error) => true,
             _ => false,
         };
+    }
+
+    /// <summary>
+    /// Executes MCP tool based on LLM proposal.
+    /// Finds tool in registry, validates parameters, calls tool, returns result.
+    /// </summary>
+    /// <param name="proposal">Action proposal from LLM.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Tool execution result as JSON.</returns>
+    private async Task<string> ExecuteToolAsync(ActionProposal proposal, CancellationToken cancellationToken)
+    {
+        var tool = await this.registry.FindToolAsync(proposal.ActionType, cancellationToken);
+        if (tool == null)
+        {
+            return $"{{\"error\":\"Tool {proposal.ActionType} not found\"}}";
+        }
+
+        var parameters = JsonDocument.Parse(proposal.Parameters ?? "{}");
+        var servers = this.registry.All();
+        foreach (var server in servers)
+        {
+            var serverTools = await server.ListToolsAsync(cancellationToken);
+            if (serverTools.Any(t => t.Name == proposal.ActionType))
+            {
+                var result = await server.CallToolAsync(proposal.ActionType, parameters, cancellationToken);
+                return JsonSerializer.Serialize(result);
+            }
+        }
+
+        return $"{{\"error\":\"No server provides tool {proposal.ActionType}\"}}";
     }
 }

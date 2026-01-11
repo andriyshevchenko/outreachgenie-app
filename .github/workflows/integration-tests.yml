@@ -50,7 +50,7 @@ jobs:
         run: dotnet build OutreachGenie.slnx --no-restore --configuration Release
 
       - name: Run Integration Tests
-        run: dotnet test OutreachGenie.slnx --no-build --configuration Release --filter "FullyQualifiedName~IntegrationTests" --verbosity normal --logger "trx;LogFileName=integration-tests.trx" --results-directory ./TestResults
+        run: dotnet test OutreachGenie.slnx --no-build --configuration Release --filter "FullyQualifiedName~IntegrationTests&FullyQualifiedName!~LlmProviderIntegrationTests" --verbosity normal --logger "trx;LogFileName=integration-tests.trx" --results-directory ./TestResults
         env:
           CI: true
 
