@@ -4,7 +4,7 @@ SPDX-License-Identifier: MIT
 -->
 
 # Copilot Instructions
-Follow these rules when generating C# code for this repository.
+CRITICAL: Each generated C# file must be validated against the following coding standards and best practices. These rules ensure code quality, maintainability, and consistency across the codebase.
 
 ## Usage Guide
 - Rules have severity: [C]ritical, [H]igh, [M]edium, [L]ow

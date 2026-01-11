@@ -12,6 +12,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./server
 
     steps:
       - name: Checkout repository
@@ -29,10 +32,10 @@ jobs:
           docker info
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore OutreachGenie.slnx
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build OutreachGenie.slnx --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: dotnet test OutreachGenie.slnx --no-build --configuration Release --verbosity normal

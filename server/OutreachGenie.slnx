@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="OutreachGenie.Api/OutreachGenie.Api.csproj" />
+  <Project Path="OutreachGenie.AppHost/OutreachGenie.AppHost.csproj" />
+  <Project Path="OutreachGenie.Application/OutreachGenie.Application.csproj" />
+  <Project Path="OutreachGenie.Domain/OutreachGenie.Domain.csproj" />
+  <Project Path="OutreachGenie.Infrastructure/OutreachGenie.Infrastructure.csproj" />
+  <Project Path="OutreachGenie.Tests/OutreachGenie.Tests.csproj" />
+</Solution>
