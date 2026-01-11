@@ -129,7 +129,7 @@ public sealed class CampaignResumeIntegrationTests
         stateBeforeRestart.Tasks.Count(t => t.Status == TaskStatus.Pending).Should().Be(1);
         stateBeforeRestart.Artifacts.Should().HaveCount(2);
 
-        var nextTaskBeforeRestart = DeterministicController.SelectNextTask(stateBeforeRestart);
+        var nextTaskBeforeRestart = controller.SelectNextTask(stateBeforeRestart);
         nextTaskBeforeRestart.Should().NotBeNull();
         nextTaskBeforeRestart!.Id.Should().Be(task3.Id);
         nextTaskBeforeRestart.Description.Should().Be("Score and rank leads");
@@ -145,7 +145,7 @@ public sealed class CampaignResumeIntegrationTests
         stateAfterRestart.Tasks.Count(t => t.Status == TaskStatus.Pending).Should().Be(1);
         stateAfterRestart.Artifacts.Should().HaveCount(2);
 
-        var nextTaskAfterRestart = DeterministicController.SelectNextTask(stateAfterRestart);
+        var nextTaskAfterRestart = newController.SelectNextTask(stateAfterRestart);
         nextTaskAfterRestart.Should().NotBeNull();
         nextTaskAfterRestart!.Id.Should().Be(task3.Id);
         nextTaskAfterRestart.Description.Should().Be("Score and rank leads");
@@ -220,7 +220,7 @@ public sealed class CampaignResumeIntegrationTests
         retryingTask.MaxRetries.Should().Be(3);
         retryingTask.ErrorMessage.Should().Be("Network timeout");
 
-        var nextTask = DeterministicController.SelectNextTask(state);
+        var nextTask = controller.SelectNextTask(state);
         nextTask.Should().NotBeNull("campaign has pending tasks that can execute independently");
         nextTask!.Id.Should().Be(task2.Id);
         nextTask.Status.Should().Be(TaskStatus.Pending);
@@ -261,13 +261,13 @@ public sealed class CampaignResumeIntegrationTests
         await context.SaveChangesAsync();
 
         var statePaused = await controller.ReloadStateAsync(campaignId);
-        var nextTaskPaused = DeterministicController.SelectNextTask(statePaused);
+        var nextTaskPaused = controller.SelectNextTask(statePaused);
         nextTaskPaused.Should().BeNull("no tasks selected when campaign is paused");
 
         await controller.TransitionCampaignStatusAsync(campaignId, CampaignStatus.Active);
 
         var stateActive = await controller.ReloadStateAsync(campaignId);
-        var nextTaskActive = DeterministicController.SelectNextTask(stateActive);
+        var nextTaskActive = controller.SelectNextTask(stateActive);
         nextTaskActive.Should().NotBeNull();
         nextTaskActive!.Id.Should().Be(task1.Id);
         nextTaskActive.Status.Should().Be(TaskStatus.Pending);

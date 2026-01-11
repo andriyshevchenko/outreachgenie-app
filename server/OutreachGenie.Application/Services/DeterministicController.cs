@@ -52,7 +52,9 @@ public sealed class DeterministicController
     /// </summary>
     /// <param name="state">Current campaign state.</param>
     /// <returns>Next task to execute, or null if none eligible.</returns>
-    public static CampaignTask? SelectNextTask(CampaignState state)
+#pragma warning disable S2325 // Make method static - violates Elegant Objects principle [C13-C]
+    public CampaignTask? SelectNextTask(CampaignState state)
+#pragma warning restore S2325
     {
         if (state.Campaign.Status != CampaignStatus.Active)
         {
@@ -73,7 +75,9 @@ public sealed class DeterministicController
     /// <param name="proposal">Proposed action from LLM.</param>
     /// <param name="state">Current campaign state.</param>
     /// <returns>Validation result.</returns>
-    public static ValidationResult ValidateProposal(ActionProposal proposal, CampaignState state)
+#pragma warning disable S2325 // Make method static - violates Elegant Objects principle [C13-C]
+    public ValidationResult ValidateProposal(ActionProposal proposal, CampaignState state)
+#pragma warning restore S2325
     {
         if (proposal.TaskId.HasValue)
         {
@@ -237,7 +241,7 @@ public sealed class DeterministicController
         }
 
         var state = await this.ReloadStateAsync(task.CampaignId, cancellationToken);
-        var validation = ValidateProposal(new ActionProposal { TaskId = taskId }, state);
+        var validation = this.ValidateProposal(new ActionProposal { TaskId = taskId }, state);
         if (!validation.IsValid)
         {
             throw new InvalidOperationException($"Task {taskId} is not eligible for execution");

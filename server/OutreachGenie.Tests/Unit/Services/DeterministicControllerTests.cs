@@ -106,7 +106,7 @@ public sealed class DeterministicControllerTests
         var task3 = new CampaignTask { Id = Guid.NewGuid(), Status = TaskStatus.Done, CreatedAt = DateTime.UtcNow.AddMinutes(-15) };
         var state = new CampaignState(campaign, new List<CampaignTask> { task1, task2, task3 }, [], []);
 
-        var next = DeterministicController.SelectNextTask(state);
+        var next = this.controller.SelectNextTask(state);
 
         next.Should().Be(task1);
     }
@@ -121,7 +121,7 @@ public sealed class DeterministicControllerTests
         var task = new CampaignTask { Id = Guid.NewGuid(), Status = TaskStatus.Pending, CreatedAt = DateTime.UtcNow };
         var state = new CampaignState(campaign, new List<CampaignTask> { task }, [], []);
 
-        var next = DeterministicController.SelectNextTask(state);
+        var next = this.controller.SelectNextTask(state);
 
         next.Should().BeNull();
     }
@@ -136,7 +136,7 @@ public sealed class DeterministicControllerTests
         var state = new CampaignState(campaign, [], [], []);
         var proposal = new ActionProposal { TaskId = Guid.NewGuid(), ActionType = "execute" };
 
-        var result = DeterministicController.ValidateProposal(proposal, state);
+        var result = this.controller.ValidateProposal(proposal, state);
 
         result.IsValid.Should().BeFalse();
         result.ErrorMessage.Should().Contain("not found");
@@ -153,7 +153,7 @@ public sealed class DeterministicControllerTests
         var state = new CampaignState(campaign, new List<CampaignTask> { task }, [], []);
         var proposal = new ActionProposal { TaskId = task.Id, ActionType = "execute" };
 
-        var result = DeterministicController.ValidateProposal(proposal, state);
+        var result = this.controller.ValidateProposal(proposal, state);
 
         result.IsValid.Should().BeFalse();
         result.ErrorMessage.Should().Contain("cannot execute");
@@ -170,7 +170,7 @@ public sealed class DeterministicControllerTests
         var state = new CampaignState(campaign, new List<CampaignTask> { task }, [], []);
         var proposal = new ActionProposal { TaskId = task.Id, ActionType = "execute" };
 
-        var result = DeterministicController.ValidateProposal(proposal, state);
+        var result = this.controller.ValidateProposal(proposal, state);
 
         result.IsValid.Should().BeTrue();
     }
