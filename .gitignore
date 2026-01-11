@@ -212,6 +212,11 @@ ClientBin/
 *.publishsettings
 orleans.codegen.cs
 
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
 # RIA/Silverlight projects
 Generated_Code/
 

@@ -1,7 +1,28 @@
 using Microsoft.EntityFrameworkCore;
 using OutreachGenie.Infrastructure.Persistence;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+builder.Host.UseSerilog((context, configuration) =>
+{
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("Application", "OutreachGenie")
+        .WriteTo.Console()
+        .WriteTo.File(
+            path: Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Documents",
+                "OutreachGenie",
+                "logs",
+                "outreachgenie-.log"),
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 31,
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}");
+});
 
 // Add services to the container.
 builder.Services.AddDbContext<OutreachGenieDbContext>(options =>
@@ -10,6 +31,16 @@ builder.Services.AddDbContext<OutreachGenieDbContext>(options =>
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+// Apply migrations and initialize database on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<OutreachGenieDbContext>();
+    await db.Database.MigrateAsync();
+}
+
+// Add Serilog request logging
+app.UseSerilogRequestLogging();
 
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
