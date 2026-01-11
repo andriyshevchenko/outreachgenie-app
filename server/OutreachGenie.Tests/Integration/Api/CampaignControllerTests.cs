@@ -3,6 +3,8 @@
 
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +24,12 @@ namespace OutreachGenie.Tests.Integration.Api;
 [Collection("Database")]
 public sealed class CampaignControllerTests
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+    };
+
     private readonly DatabaseFixture fixture;
     private readonly WebApplicationFactory<Program> factory;
 
@@ -65,7 +73,7 @@ public sealed class CampaignControllerTests
             "Software engineers in tech companies");
         var response = await client.PostAsJsonAsync("/api/v1/campaign", request);
         response.StatusCode.Should().Be(HttpStatusCode.Created, "campaign should be created");
-        var campaign = await response.Content.ReadFromJsonAsync<Campaign>();
+        var campaign = await response.Content.ReadFromJsonAsync<Campaign>(JsonOptions);
         campaign.Should().NotBeNull("response should contain campaign");
         campaign!.Name.Should().Be("Test Campaign", "name should match request");
         campaign.TargetAudience.Should().Be(
@@ -86,10 +94,10 @@ public sealed class CampaignControllerTests
         var client = this.factory.CreateClient();
         var createRequest = new CreateCampaignRequest("Get Test", "Target audience");
         var createResponse = await client.PostAsJsonAsync("/api/v1/campaign", createRequest);
-        var created = await createResponse.Content.ReadFromJsonAsync<Campaign>();
+        var created = await createResponse.Content.ReadFromJsonAsync<Campaign>(JsonOptions);
         var getResponse = await client.GetAsync($"/api/v1/campaign/{created!.Id}");
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK, "campaign should exist");
-        var retrieved = await getResponse.Content.ReadFromJsonAsync<Campaign>();
+        var retrieved = await getResponse.Content.ReadFromJsonAsync<Campaign>(JsonOptions);
         retrieved.Should().NotBeNull("response should contain campaign");
         retrieved!.Id.Should().Be(created.Id, "ID should match");
         retrieved.Name.Should().Be("Get Test", "name should match");
@@ -125,7 +133,7 @@ public sealed class CampaignControllerTests
             new CreateCampaignRequest("Campaign 2", "Audience 2"));
         var response = await client.GetAsync("/api/v1/campaign");
         response.StatusCode.Should().Be(HttpStatusCode.OK, "list should succeed");
-        var campaigns = await response.Content.ReadFromJsonAsync<List<Campaign>>();
+        var campaigns = await response.Content.ReadFromJsonAsync<List<Campaign>>(JsonOptions);
         campaigns.Should().NotBeNull("response should contain campaigns");
         campaigns!.Should().HaveCountGreaterOrEqualTo(2, "at least two campaigns should exist");
     }
@@ -143,7 +151,7 @@ public sealed class CampaignControllerTests
         var response = await client.PostAsync($"/api/v1/campaign/{campaign.Id}/pause", null);
         response.StatusCode.Should().Be(HttpStatusCode.NoContent, "pause should succeed");
         var getResponse = await client.GetAsync($"/api/v1/campaign/{campaign.Id}");
-        var updated = await getResponse.Content.ReadFromJsonAsync<Campaign>();
+        var updated = await getResponse.Content.ReadFromJsonAsync<Campaign>(JsonOptions);
         updated!.Status.Should().Be(CampaignStatus.Paused, "campaign should be paused");
     }
 
@@ -158,7 +166,7 @@ public sealed class CampaignControllerTests
         var client = this.factory.CreateClient();
         var createRequest = new CreateCampaignRequest("Test", "Audience");
         var createResponse = await client.PostAsJsonAsync("/api/v1/campaign", createRequest);
-        var campaign = await createResponse.Content.ReadFromJsonAsync<Campaign>();
+        var campaign = await createResponse.Content.ReadFromJsonAsync<Campaign>(JsonOptions);
         var response = await client.PostAsync($"/api/v1/campaign/{campaign!.Id}/pause", null);
         response.StatusCode.Should().Be(
             HttpStatusCode.BadRequest,
@@ -178,7 +186,7 @@ public sealed class CampaignControllerTests
         var response = await client.PostAsync($"/api/v1/campaign/{campaign.Id}/resume", null);
         response.StatusCode.Should().Be(HttpStatusCode.NoContent, "resume should succeed");
         var getResponse = await client.GetAsync($"/api/v1/campaign/{campaign.Id}");
-        var updated = await getResponse.Content.ReadFromJsonAsync<Campaign>();
+        var updated = await getResponse.Content.ReadFromJsonAsync<Campaign>(JsonOptions);
         updated!.Status.Should().Be(CampaignStatus.Active, "campaign should be active");
     }
 
@@ -209,7 +217,7 @@ public sealed class CampaignControllerTests
         var client = this.factory.CreateClient();
         var createRequest = new CreateCampaignRequest("To Delete", "Audience");
         var createResponse = await client.PostAsJsonAsync("/api/v1/campaign", createRequest);
-        var campaign = await createResponse.Content.ReadFromJsonAsync<Campaign>();
+        var campaign = await createResponse.Content.ReadFromJsonAsync<Campaign>(JsonOptions);
         var deleteResponse = await client.DeleteAsync($"/api/v1/campaign/{campaign!.Id}");
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent, "delete should succeed");
         var getResponse = await client.GetAsync($"/api/v1/campaign/{campaign.Id}");
@@ -233,7 +241,7 @@ public sealed class CampaignControllerTests
     {
         var createRequest = new CreateCampaignRequest("Active Campaign", "Target");
         var createResponse = await client.PostAsJsonAsync("/api/v1/campaign", createRequest);
-        var campaign = await createResponse.Content.ReadFromJsonAsync<Campaign>();
+        var campaign = await createResponse.Content.ReadFromJsonAsync<Campaign>(JsonOptions);
         using var scope = this.factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<OutreachGenieDbContext>();
         var entity = await db.Campaigns.FindAsync(campaign!.Id);
@@ -247,7 +255,7 @@ public sealed class CampaignControllerTests
         var campaign = await CreateActiveCampaign(client);
         await client.PostAsync($"/api/v1/campaign/{campaign.Id}/pause", null);
         var getResponse = await client.GetAsync($"/api/v1/campaign/{campaign.Id}");
-        return (await getResponse.Content.ReadFromJsonAsync<Campaign>())!;
+        return (await getResponse.Content.ReadFromJsonAsync<Campaign>(JsonOptions))!;
     }
 
     private async Task CleanDatabase()
