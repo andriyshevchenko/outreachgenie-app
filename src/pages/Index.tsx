@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { ChatPage } from '@/pages/ChatPage';
+import { CampaignsPage } from '@/pages/CampaignsPage';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { DeveloperPage } from '@/pages/DeveloperPage';
@@ -25,6 +26,8 @@ const Index = () => {
     switch (currentPage) {
       case 'chat':
         return <ChatPage />;
+      case 'campaigns':
+        return <CampaignsPage />;
       case 'analytics':
         return <AnalyticsPage />;
       case 'settings':

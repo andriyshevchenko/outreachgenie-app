@@ -1,4 +1,4 @@
-import { MessageSquare, BarChart3, Settings, Sparkles, Linkedin, Code2 } from 'lucide-react';
+import { MessageSquare, BarChart3, Settings, Sparkles, Linkedin, Code2, FolderKanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
@@ -9,6 +9,7 @@ interface SidebarProps {
 
 const navItems = [
   { id: 'chat', icon: MessageSquare, label: 'Agent Chat' },
+  { id: 'campaigns', icon: FolderKanban, label: 'Campaigns' },
   { id: 'analytics', icon: BarChart3, label: 'Analytics' },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
