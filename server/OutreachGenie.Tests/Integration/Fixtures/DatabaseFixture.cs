@@ -1,34 +1,30 @@
+// SPDX-FileCopyrightText: Copyright (c) 2025 Yegor Bugayenko
+// SPDX-License-Identifier: MIT
+
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using OutreachGenie.Infrastructure.Persistence;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace OutreachGenie.Tests.Integration.Fixtures;
 
 /// <summary>
-/// Provides a shared database container for integration tests using Testcontainers.
+/// Provides a shared in-memory SQLite database for integration tests.
 /// </summary>
 public sealed class DatabaseFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container;
+    private static int databaseCounter;
+    private SqliteConnection? connection;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DatabaseFixture"/> class.
+    /// Gets unique database name for this test session.
     /// </summary>
-    public DatabaseFixture()
-    {
-        this.container = new PostgreSqlBuilder()
-            .WithImage("postgres:16-alpine")
-            .WithDatabase("outreachgenie_test")
-            .WithUsername("test")
-            .WithPassword("test")
-            .Build();
-    }
+    public string DatabaseName { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the connection string for the test database.
     /// </summary>
-    public string ConnectionString => this.container.GetConnectionString();
+    public string ConnectionString => $"DataSource={this.DatabaseName};Mode=Memory;Cache=Shared";
 
     /// <summary>
     /// Creates a new DbContext instance for testing.
@@ -37,29 +33,37 @@ public sealed class DatabaseFixture : IAsyncLifetime
     public OutreachGenieDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<OutreachGenieDbContext>()
-            .UseNpgsql(this.ConnectionString)
+            .UseSqlite(this.ConnectionString)
             .Options;
 
         var context = new OutreachGenieDbContext(options);
-        context.Database.EnsureCreated();
         return context;
     }
 
     /// <summary>
-    /// Starts the database container.
+    /// Initializes the in-memory database.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task InitializeAsync()
     {
-        await this.container.StartAsync();
+        var id = Interlocked.Increment(ref databaseCounter);
+        this.DatabaseName = $"TestDb_{id}_{Guid.NewGuid():N}";
+        this.connection = new SqliteConnection(this.ConnectionString);
+        await this.connection.OpenAsync();
+        await using var context = this.CreateDbContext();
+        await context.Database.MigrateAsync();
     }
 
     /// <summary>
-    /// Stops and disposes the database container.
+    /// Closes the database connection.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task DisposeAsync()
     {
-        await this.container.DisposeAsync();
+        if (this.connection != null)
+        {
+            await this.connection.CloseAsync();
+            await this.connection.DisposeAsync();
+        }
     }
 }

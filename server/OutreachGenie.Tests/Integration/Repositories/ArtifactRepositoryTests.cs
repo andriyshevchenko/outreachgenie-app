@@ -126,6 +126,137 @@ public sealed class ArtifactRepositoryTests
     }
 
     /// <summary>
+    /// Tests that UpdateAsync modifies artifact content and version.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task UpdateAsync_ShouldModifyArtifactContent()
+    {
+        await using var context = this.fixture.CreateDbContext();
+        var repository = new ArtifactRepository(context);
+        var campaignRepository = new CampaignRepository(context);
+        var campaign = new Campaign
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Campaign for Update",
+            TargetAudience = "Users",
+            Status = CampaignStatus.Active,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            WorkingDirectory = "/test/update",
+        };
+        await campaignRepository.CreateAsync(campaign);
+        var artifact = new Artifact
+        {
+            Id = Guid.NewGuid(),
+            CampaignId = campaign.Id,
+            Type = ArtifactType.Context,
+            Key = "test_key",
+            ContentJson = "{\"original\":true}",
+            Source = ArtifactSource.User,
+            Version = 1,
+            CreatedAt = DateTime.UtcNow,
+        };
+        await repository.CreateAsync(artifact);
+
+        artifact.ContentJson = "{\"updated\":true}";
+        artifact.Version = 2;
+        await repository.UpdateAsync(artifact);
+
+        var updated = await repository.GetByIdAsync(artifact.Id);
+        updated.Should().NotBeNull();
+        updated!.ContentJson.Should().Contain("updated");
+        updated.Version.Should().Be(2);
+    }
+
+    /// <summary>
+    /// Tests that DeleteAsync removes artifact from database.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DeleteAsync_ShouldRemoveArtifact()
+    {
+        await using var context = this.fixture.CreateDbContext();
+        var repository = new ArtifactRepository(context);
+        var campaignRepository = new CampaignRepository(context);
+        var campaign = new Campaign
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Campaign for Delete",
+            TargetAudience = "Users",
+            Status = CampaignStatus.Active,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            WorkingDirectory = "/test/delete",
+        };
+        await campaignRepository.CreateAsync(campaign);
+        var artifact = new Artifact
+        {
+            Id = Guid.NewGuid(),
+            CampaignId = campaign.Id,
+            Type = ArtifactType.Arbitrary,
+            Key = "temp_data",
+            ContentJson = "{\"temp\":true}",
+            Source = ArtifactSource.Agent,
+            Version = 1,
+            CreatedAt = DateTime.UtcNow,
+        };
+        await repository.CreateAsync(artifact);
+
+        await repository.DeleteAsync(artifact.Id);
+
+        var deleted = await repository.GetByIdAsync(artifact.Id);
+        deleted.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that GetByCampaignIdAsync returns all artifacts for a campaign.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task GetByCampaignIdAsync_ShouldReturnAllCampaignArtifacts()
+    {
+        await using var context = this.fixture.CreateDbContext();
+        var repository = new ArtifactRepository(context);
+        var campaignRepository = new CampaignRepository(context);
+        var campaign = new Campaign
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Campaign for GetAll",
+            TargetAudience = "Everyone",
+            Status = CampaignStatus.Active,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            WorkingDirectory = "/test/getall",
+        };
+        await campaignRepository.CreateAsync(campaign);
+        await repository.CreateAsync(new Artifact
+        {
+            Id = Guid.NewGuid(),
+            CampaignId = campaign.Id,
+            Type = ArtifactType.Context,
+            ContentJson = "{}",
+            Source = ArtifactSource.User,
+            Version = 1,
+            CreatedAt = DateTime.UtcNow,
+        });
+        await repository.CreateAsync(new Artifact
+        {
+            Id = Guid.NewGuid(),
+            CampaignId = campaign.Id,
+            Type = ArtifactType.Leads,
+            ContentJson = "[]",
+            Source = ArtifactSource.Agent,
+            Version = 1,
+            CreatedAt = DateTime.UtcNow,
+        });
+
+        var results = await repository.GetByCampaignIdAsync(campaign.Id);
+
+        results.Should().HaveCountGreaterOrEqualTo(2);
+    }
+
+    /// <summary>
     /// Tests that arbitrary artifacts can be created and retrieved.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>

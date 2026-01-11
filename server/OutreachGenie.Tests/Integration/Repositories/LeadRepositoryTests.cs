@@ -147,6 +147,141 @@ public sealed class LeadRepositoryTests
     }
 
     /// <summary>
+    /// Tests that GetByIdAsync retrieves a lead by identifier.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task GetByIdAsync_ShouldReturnLeadWhenExists()
+    {
+        await using var context = this.fixture.CreateDbContext();
+        var campaignRepository = new CampaignRepository(context);
+        var leadRepository = new LeadRepository(context);
+        var campaign = new Campaign
+        {
+            Id = Guid.NewGuid(),
+            Name = "GetById Test Campaign",
+            Status = CampaignStatus.Active,
+            TargetAudience = "Engineers",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            WorkingDirectory = "/test/getbyid",
+        };
+        await campaignRepository.CreateAsync(campaign);
+        var lead = new Lead
+        {
+            Id = Guid.NewGuid(),
+            CampaignId = campaign.Id,
+            FullName = "Test Lead",
+            ProfileUrl = "https://linkedin.com/test",
+            Title = "Senior Engineer",
+            Headline = "Building things",
+            Location = "Seattle",
+            WeightScore = 0.75,
+            Status = LeadStatus.New,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        await leadRepository.CreateAsync(lead);
+
+        var result = await leadRepository.GetByIdAsync(lead.Id);
+
+        result.Should().NotBeNull();
+        result!.FullName.Should().Be("Test Lead");
+        result.WeightScore.Should().Be(0.75);
+    }
+
+    /// <summary>
+    /// Tests that UpdateAsync modifies lead properties.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task UpdateAsync_ShouldModifyLeadProperties()
+    {
+        await using var context = this.fixture.CreateDbContext();
+        var campaignRepository = new CampaignRepository(context);
+        var leadRepository = new LeadRepository(context);
+        var campaign = new Campaign
+        {
+            Id = Guid.NewGuid(),
+            Name = "Update Lead Test Campaign",
+            Status = CampaignStatus.Active,
+            TargetAudience = "Managers",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            WorkingDirectory = "/test/updateLead",
+        };
+        await campaignRepository.CreateAsync(campaign);
+        var lead = new Lead
+        {
+            Id = Guid.NewGuid(),
+            CampaignId = campaign.Id,
+            FullName = "Original Name",
+            ProfileUrl = "https://linkedin.com/original",
+            Title = "Manager",
+            Headline = "Leading teams",
+            Location = "NYC",
+            WeightScore = 0.5,
+            Status = LeadStatus.New,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        await leadRepository.CreateAsync(lead);
+
+        lead.Status = LeadStatus.Connected;
+        lead.WeightScore = 0.85;
+        lead.UpdatedAt = DateTime.UtcNow;
+        await leadRepository.UpdateAsync(lead);
+
+        var updated = await leadRepository.GetByIdAsync(lead.Id);
+        updated.Should().NotBeNull();
+        updated!.Status.Should().Be(LeadStatus.Connected);
+        updated.WeightScore.Should().Be(0.85);
+    }
+
+    /// <summary>
+    /// Tests that DeleteAsync removes lead from database.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DeleteAsync_ShouldRemoveLead()
+    {
+        await using var context = this.fixture.CreateDbContext();
+        var campaignRepository = new CampaignRepository(context);
+        var leadRepository = new LeadRepository(context);
+        var campaign = new Campaign
+        {
+            Id = Guid.NewGuid(),
+            Name = "Delete Lead Test Campaign",
+            Status = CampaignStatus.Active,
+            TargetAudience = "Sales",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            WorkingDirectory = "/test/deleteLead",
+        };
+        await campaignRepository.CreateAsync(campaign);
+        var lead = new Lead
+        {
+            Id = Guid.NewGuid(),
+            CampaignId = campaign.Id,
+            FullName = "To Delete",
+            ProfileUrl = "https://linkedin.com/delete",
+            Title = "Rep",
+            Headline = "Sales representative",
+            Location = "Boston",
+            WeightScore = 0.4,
+            Status = LeadStatus.New,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        await leadRepository.CreateAsync(lead);
+
+        await leadRepository.DeleteAsync(lead.Id);
+
+        var deleted = await leadRepository.GetByIdAsync(lead.Id);
+        deleted.Should().BeNull();
+    }
+
+    /// <summary>
     /// Tests that CreateBatchAsync inserts multiple leads efficiently.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>

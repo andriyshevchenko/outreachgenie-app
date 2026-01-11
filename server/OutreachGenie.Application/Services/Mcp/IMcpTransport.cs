@@ -3,7 +3,7 @@
 
 using System.Text.Json;
 
-namespace OutreachGenie.Application.Services.Mcp;
+namespace OutreachGenie.Application.Interfaces.Mcp;
 
 /// <summary>
 /// Represents a communication transport for MCP server interactions.

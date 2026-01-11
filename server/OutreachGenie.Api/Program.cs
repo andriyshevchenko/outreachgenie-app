@@ -40,11 +40,18 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Apply migrations and initialize database on startup
+// Apply migrations and initialize database on startup (skip for InMemory in tests)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<OutreachGenieDbContext>();
-    await db.Database.MigrateAsync();
+    if (db.Database.IsRelational())
+    {
+        await db.Database.MigrateAsync();
+    }
+    else
+    {
+        await db.Database.EnsureCreatedAsync();
+    }
 }
 
 // Add Serilog request logging
@@ -58,3 +65,16 @@ app.UseAuthorization();
 app.MapControllers();
 
 await app.RunAsync();
+
+/// <summary>
+/// Partial class declaration to make Program accessible for integration testing.
+/// </summary>
+public partial class Program
+{
+    /// <summary>
+    /// Protected constructor to satisfy SonarAnalyzer S1118.
+    /// </summary>
+    protected Program()
+    {
+    }
+}
