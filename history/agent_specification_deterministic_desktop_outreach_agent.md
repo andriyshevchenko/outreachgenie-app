@@ -127,33 +127,46 @@ The UI does not enforce correctness and does not bypass the Controller.
 
 **Manual Login (Option A)**:
 1. Campaign enters Active status
-2. Agent detects no valid cookies for campaign
+2. Agent detects no valid cookies in database
 3. Opens headed Playwright browser
 4. Displays message: "Please log in to LinkedIn"
 5. User logs in manually
-6. Browser cookies saved to: `{BrowserSessionPath}/{campaign-id}/cookies.json`
-7. Cookies reused on subsequent runs
+6. Browser cookies saved to database, encrypted via OS-level security:
+   - **Windows**: DPAPI (Data Protection API) - automatic encryption tied to user account
+   - **macOS**: Keychain API - secure credential storage
+7. Cookies reused on subsequent runs (decrypted transparently)
+
+**Cookie Storage Architecture**:
+- Stored in database as encrypted blob (not plain text files)
+- One cookie set per campaign (allows different LinkedIn accounts)
+- Encryption key managed by OS, not application
+- Automatic decryption when agent needs cookies
+
+**Database Schema**:
+```csharp
+// Add to Campaign entity or create LinkedInSession entity
+public sealed class LinkedInSession
+{
+    public Guid Id { get; init; }
+    public Guid CampaignId { get; init; }
+    public byte[] EncryptedCookies { get; init; }  // DPAPI/Keychain encrypted
+    public DateTime ExpiresAt { get; init; }
+    public DateTime CreatedAt { get; init; }
+}
+```
 
 **Cookie Expiration Handling**:
-- Check cookie `expires` timestamp before each session
+- Check `ExpiresAt` timestamp before each session
 - If expired: Emit SignalR event `LinkedInAuthRequired`
 - UI shows notification: "LinkedIn session expired - Click to re-login"
-- User clicks → Opens browser → Manual login → Cookies saved
+- User clicks → Opens browser → Manual login → Cookies re-encrypted and saved to DB
 
-**Cookie Storage Format**:
-```json
-[
-  {
-    "name": "li_at",
-    "value": "...",
-    "domain": ".linkedin.com",
-    "path": "/",
-    "expires": 1735747200,
-    "httpOnly": true,
-    "secure": true
-  }
-]
-```
+**Security Benefits**:
+- Cookies encrypted at rest in database
+- DPAPI: Encryption tied to Windows user account (can't be decrypted by other users)
+- macOS Keychain: OS-level secure storage with user authentication
+- No plaintext cookies on disk or in database
+- Automatic key rotation via OS mechanisms
 
 ### 4.3 Chat System Implementation
 

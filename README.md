@@ -93,10 +93,13 @@ EXA_API_KEY=your_key_here
 # Agent Configuration
 POLLING_INTERVAL_MS=60000
 MAX_CONCURRENT_CAMPAIGNS=1
-
-# Browser Session Storage
-BROWSER_SESSION_PATH=%APPDATA%/OutreachGenie/browser-sessions
 ```
+
+**LinkedIn Session Security**: Cookies are stored in the database and automatically encrypted via OS-level security:
+- **Windows**: DPAPI (Data Protection API) - encryption tied to user account
+- **macOS**: Keychain API - secure credential storage
+
+No additional configuration needed for cookie encryption.
 
 ### MCP Server Configuration
 
