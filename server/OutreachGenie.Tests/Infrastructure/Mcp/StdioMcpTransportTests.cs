@@ -52,7 +52,7 @@ public sealed class StdioMcpTransportTests
     /// Tests that ConnectAsync with PowerShell echo command succeeds.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
+    [Fact(Skip = "Requires PowerShell (Windows-only)")]
     public async Task ConnectAsync_ShouldStartProcessSuccessfully()
     {
         var transport = new StdioMcpTransport("powershell", "-Command \"while($true) { $line = [Console]::ReadLine(); if($line) { Write-Output $line } }\"", NullLogger<StdioMcpTransport>.Instance);
@@ -71,7 +71,7 @@ public sealed class StdioMcpTransportTests
     /// Tests that ConnectAsync when already connected returns immediately.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
+    [Fact(Skip = "Requires PowerShell (Windows-only)")]
     public async Task ConnectAsync_ShouldReturnImmediatelyWhenAlreadyConnected()
     {
         var transport = new StdioMcpTransport("powershell", "-Command \"while($true) { $line = [Console]::ReadLine(); if($line) { Write-Output $line } }\"", NullLogger<StdioMcpTransport>.Instance);
@@ -91,7 +91,7 @@ public sealed class StdioMcpTransportTests
     /// Tests that SendAsync successfully sends and receives JSON RPC message.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
+    [Fact(Skip = "Requires PowerShell (Windows-only)")]
     public async Task SendAsync_ShouldSendAndReceiveJsonRpcMessage()
     {
         var transport = new StdioMcpTransport("powershell", "-Command \"while($true) { $line = [Console]::ReadLine(); if($line) { Write-Output $line } }\"", NullLogger<StdioMcpTransport>.Instance);
@@ -112,7 +112,7 @@ public sealed class StdioMcpTransportTests
     /// Tests that DisconnectAsync properly terminates process.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
+    [Fact(Skip = "Requires PowerShell (Windows-only)")]
     public async Task DisconnectAsync_ShouldTerminateProcess()
     {
         var transport = new StdioMcpTransport("powershell", "-Command \"while($true) { Start-Sleep -Milliseconds 100 }\"", NullLogger<StdioMcpTransport>.Instance);
@@ -125,7 +125,7 @@ public sealed class StdioMcpTransportTests
     /// Tests that environment variables are passed to spawned process.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
+    [Fact(Skip = "Requires PowerShell (Windows-only)")]
     public async Task ConnectAsync_ShouldPassEnvironmentVariablesToProcess()
     {
         var environment = new Dictionary<string, string>

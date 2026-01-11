@@ -34,9 +34,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install npx and MCP servers
+      - name: Setup Desktop Commander
         run: |
-          npm install -g npx
           npx @wonderwhy-er/desktop-commander@latest setup
 
       - name: Verify Docker
