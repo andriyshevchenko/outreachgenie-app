@@ -1,15 +1,21 @@
 # Deterministic Agent Specification (MVP)
 
+> **Status**: Architecture spec with implementation decisions  
+> **Last Updated**: January 11, 2026
+
 ## 1. Purpose and Scope
 
 This document specifies a **deterministic, state-driven desktop agent system** for running LinkedIn outreach campaigns.
 
-The target implementation environment is:
-- **Desktop runtime:** .NET MAUI
-- **UI layer:** Hybrid Blazor (HTML/CSS-based)
-- **Database:** Supabase (PostgreSQL)
-- **Agent runtime:** Local controller process
-- **LLM provider:** Abstracted (pluggable)
+The **ACTUAL implementation environment** is:
+- **Desktop runtime:** .NET 10 Web API (local server)
+- **UI layer:** React 18 + TypeScript (frontend)
+- **Database:** SQLite with EF Core (local-first)
+- **Agent runtime:** Background service (AgentHostedService)
+- **LLM provider:** OpenAI (abstracted via ILlmProvider)
+- **Tool orchestration:** Model Context Protocol (MCP)
+
+~~Original spec mentioned .NET MAUI/Blazor and Supabase - actual implementation uses React frontend + SQLite backend~~
 
 The primary goal is to eliminate **context loss as a correctness risk** by design. The system must remain correct even if:
 - The LLM forgets prior turns
@@ -43,7 +49,9 @@ The LLM may **not**:
 
 ### 3.1 Controller (Authoritative, .NET)
 
-The Controller is a deterministic, single-authority process running locally inside the MAUI application.
+The Controller is a deterministic, single-authority process running locally as a background service.
+
+**Implementation**: `DeterministicController.cs` in OutreachGenie.Application
 
 It:
 - Owns all campaign state
@@ -51,7 +59,7 @@ It:
 - Owns database writes
 - Owns logging
 - Owns invariant enforcement
-- Mediates all tool execution (browser, filesystem, CLI, network)
+- Mediates all tool execution (browser, filesystem, CLI, network) via MCP
 
 The Controller **must not rely on conversation history** for correctness.
 
@@ -59,7 +67,9 @@ The Controller **must not rely on conversation history** for correctness.
 
 ### 3.2 Agent (LLM, Non-authoritative)
 
-The Agent is an external or embedded LLM accessed via an abstract interface.
+The Agent is an external LLM (OpenAI) accessed via `ILlmProvider` interface.
+
+**Implementation**: `OpenAiLlmProvider.cs` in OutreachGenie.Infrastructure
 
 It:
 - Receives a snapshot of authoritative state
@@ -75,28 +85,144 @@ The Agent **cannot mutate state** and **cannot assert task completion**.
 
 ---
 
-### 3.3 UI (Hybrid Blazor, Non-authoritative)
+### 3.3 UI (React, Non-authoritative)
 
 The UI:
-- Renders campaign state
+- Renders campaign state via REST API
 - Displays tasks, logs, and leads
 - Accepts user input and confirmations
+- Receives real-time updates via SignalR
+
+**Implementation**: React components in `src/pages/` and `src/components/`
 
 The UI does not enforce correctness and does not bypass the Controller.
 
 ---
 
-### 3.2 Agent (LLM)
+## 4. Implementation Decisions (Ready to Code)
 
-The Agent:
+### 4.1 Background Service Architecture
 
-- Receives a snapshot of authoritative state
-- Proposes exactly one next action per turn
-- Explains intent (optional)
+**AgentHostedService** (to be implemented):
+- Inherits from `BackgroundService`
+- Polls for Active campaigns every 60 seconds
+- Processes 1 campaign at a time (MaxConcurrentCampaigns=1)
+- Calls `DeterministicController.ExecuteTaskWithLlmAsync()`
+- Emits SignalR events for UI updates
+- Handles errors with 3 retries + exponential backoff
 
-The Agent is **stateless and replaceable**.
+**Configuration**:
+```json
+// appsettings.json
+{
+  "AgentSettings": {
+    "PollingIntervalMs": 60000,
+    "MaxConcurrentCampaigns": 1,
+    "BrowserSessionPath": "%APPDATA%/OutreachGenie/browser-sessions"
+  }
+}
+```
 
----
+### 4.2 LinkedIn Authentication Flow
+
+**Manual Login (Option A)**:
+1. Campaign enters Active status
+2. Agent detects no valid cookies for campaign
+3. Opens headed Playwright browser
+4. Displays message: "Please log in to LinkedIn"
+5. User logs in manually
+6. Browser cookies saved to: `{BrowserSessionPath}/{campaign-id}/cookies.json`
+7. Cookies reused on subsequent runs
+
+**Cookie Expiration Handling**:
+- Check cookie `expires` timestamp before each session
+- If expired: Emit SignalR event `LinkedInAuthRequired`
+- UI shows notification: "LinkedIn session expired - Click to re-login"
+- User clicks → Opens browser → Manual login → Cookies saved
+
+**Cookie Storage Format**:
+```json
+[
+  {
+    "name": "li_at",
+    "value": "...",
+    "domain": ".linkedin.com",
+    "path": "/",
+    "expires": 1735747200,
+    "httpOnly": true,
+    "secure": true
+  }
+]
+```
+
+### 4.3 Chat System Implementation
+
+**Storage**: Chat messages stored as Artifacts with `type="chat"`
+
+```csharp
+// Example chat artifact
+await _artifactRepo.CreateAsync(new Artifact {
+    CampaignId = campaignId,
+    Type = "chat",
+    Content = JsonSerializer.Serialize(new { 
+        role = "user",  // or "assistant"
+        message = "Show me the top leads",
+        timestamp = DateTime.UtcNow
+    }),
+    Version = 1
+});
+```
+
+**Context Loading**:
+1. Load campaign entity
+2. Load last 10 chat artifacts for conversation history
+3. Load latest lead/message/heuristic artifacts for context
+4. Build system prompt with all context
+5. Call `ILlmProvider.GenerateResponseAsync()`
+6. Save response as chat artifact
+7. Emit SignalR `ChatMessageReceived` event
+
+**Rate Limiting**: 10 messages per minute (applied via ASP.NET Core rate limiting middleware)
+
+### 4.4 MCP Tool Integration
+
+**Server Discovery**:
+- **Built-in servers**: Called via `npx @modelcontextprotocol/{server-name}`
+- **Custom servers**: Configured in `mcp.json` with absolute paths
+
+**Lifecycle**: Singleton (shared across all campaigns)
+
+**Registered Servers**:
+1. **Playwright** (`npx -y @modelcontextprotocol/server-playwright`)
+   - Headed mode for LinkedIn automation
+   - Cookie persistence per campaign
+2. **Desktop Commander** (custom path or npx)
+   - File system operations
+   - CLI command execution
+3. **Fetch** (`npx -y @modelcontextprotocol/server-fetch`)
+   - HTTP requests
+4. **Exa** (`npx -y @modelcontextprotocol/server-exa`)
+   - AI-powered web search
+
+**Transport**: `StdioMcpTransport` with JSON-RPC 2.0
+
+### 4.5 Error Handling & Retry Strategy
+
+**Controller Retry Logic**:
+- **Per-task retries**: 3 attempts with exponential backoff (1s, 2s, 4s)
+- **Consecutive error threshold**: 3 consecutive failures → Campaign status = Failed
+- **Logged errors**: All errors logged with full context (campaign ID, task ID, stack trace)
+
+**LLM Retry Logic** (already implemented in `OpenAiLlmProvider`):
+- 3 retries on transient errors (rate limit, network timeout)
+- Exponential backoff
+- Different error types handled separately
+
+**Campaign State Transitions on Error**:
+```
+Active → [3 consecutive errors] → Failed
+Failed → [user manual intervention] → Paused → Active
+```
 
 ### 3.3 UI (Non-authoritative)
 
