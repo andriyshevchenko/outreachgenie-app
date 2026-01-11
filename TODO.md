@@ -1,64 +1,193 @@
-# OutreachGenie Backend Implementation TODO
+# OutreachGenie MVP Implementation TODO
 
-> **Status**: 14/24 tasks completed
+> **Status**: 14/24 tasks completed → **MVP Priority: 4 Critical Tasks Remaining**
 > **Last Updated**: January 11, 2026
+> **Focus**: End-to-end functional prototype with full test coverage
 
 ---
 
-## Phase 1: Foundation & Setup (5 tasks)
+## 🎯 MVP CRITICAL PATH (Priority #1)
 
-### [ ] 1. Copy specification documents to workspace root
-**Priority**: Critical  
-**Files**: 
-- Copy `agent_specification_deterministic_desktop_outreach_agent.md` from Downloads
-- Copy `agent_chat_output_specification.md` from Downloads
-**Why**: Authoritative reference for all architectural decisions
+### [ ] MVP-1: Campaign Management UI
+**Priority**: 🔴 CRITICAL - Core user workflow  
+**Frontend Components**:
+- `CampaignsPage.tsx` - List view with status indicators, pause/resume/delete actions
+- `CreateCampaignDialog.tsx` - Form to create new campaigns (name, target audience)
+- `CampaignCard.tsx` - Campaign list item with real-time status updates via SignalR
+**API Integration**:
+- Wire to existing CampaignController endpoints (create, list, pause, resume, delete)
+- Subscribe to CampaignStateChanged SignalR events for live status updates
+**Navigation**: Add route in App.tsx, add link in Sidebar
+**Tests**:
+- Unit tests for CampaignsPage, CreateCampaignDialog (user interactions)
+- Playwright E2E test: Create campaign → See in list → Pause → Resume → Delete
+**Estimated**: 3-4 hours
 
-### [ ] 2. Create .NET backend project structure with Aspire
-**Priority**: Critical  
-**Status**: ✅ COMPLETE (Infrastructure exists)
-**Projects to create**:
-- `server/OutreachGenie.Api` - ASP.NET Core with Controllers
-- `server/OutreachGenie.Domain` - Core entities, value objects, domain events
-- `server/OutreachGenie.Application` - Business logic, services, interfaces
-- `server/OutreachGenie.Infrastructure` - Database, external services, MCP clients
-- `server/OutreachGenie.Tests` - Unit & integration tests
-- `server/OutreachGenie.AppHost` - Aspire orchestration
-**Architecture**: Clean Architecture with DDD principles
+### [ ] MVP-2: SignalR Integration Tests
+**Priority**: 🔴 CRITICAL - Validate real-time communication  
+**Backend Tests**:
+- `AgentHubIntegrationTests.cs` - Test SignalR hub broadcasting
+  - Connect clients, trigger events, verify clients receive messages
+  - Test TaskStatusChanged, ChatMessageReceived, CampaignStateChanged, ArtifactCreated
+- `AgentNotificationServiceTests.cs` - Unit tests for notification service
+**Frontend Tests**:
+- Mock SignalR connection in tests (vi.mock)
+- Test event subscription and state updates in ChatPage
+**E2E Test with Playwright**:
+- Create campaign → Verify frontend receives CampaignStateChanged event
+- Send chat message → Verify frontend receives ChatMessageReceived event
+**Estimated**: 2-3 hours
 
-### [ ] 3. Configure centralized build and package management
-**Priority**: High  
-**Status**: ✅ COMPLETE (Directory.Build.props, Directory.Packages.props, .editorconfig exist)
-**Files to create**:
-- `Directory.Build.props` - Common build properties, code quality rules
-- `Directory.Packages.props` - Centralized NuGet versions
-- `.editorconfig` - Code style enforcement
-**Analyzers**: StyleCop, SonarAnalyzer.CSharp
-**Rules**: Treat warnings as errors
+### [ ] MVP-3: Full Application Flow E2E Test
+**Priority**: 🔴 CRITICAL - Validate complete user journey  
+**Playwright E2E Scenarios**:
+1. **Campaign Creation Flow**:
+   - Navigate to Campaigns page
+   - Click "New Campaign" → Fill form → Submit
+   - Verify campaign appears in list with "Draft" status
+2. **Chat Interaction Flow**:
+   - Navigate to Chat page
+   - Send message → Verify user message appears
+   - Verify agent response appears (with typing indicator)
+   - Verify timestamp formatting
+3. **Campaign Lifecycle Flow**:
+   - Create campaign → Start campaign → Verify status changes
+   - Pause campaign → Verify status changes to "Paused"
+   - Resume campaign → Verify status changes to "Active"
+   - View tasks → Verify tasks are listed
+4. **Real-time Updates Flow**:
+   - Open campaign in two browser tabs (via Playwright contexts)
+   - Pause campaign in tab 1 → Verify tab 2 receives SignalR event and updates
+**Test File**: `e2e/full-app-flow.spec.ts` (using Playwright MCP)
+**Estimated**: 3-4 hours
 
-### [X] 4. Set up SQLite with EF Core
-**Priority**: Critical  
-**Completed**: January 11, 2026
-**Tasks**:
-- Install Microsoft.EntityFrameworkCore.Sqlite ✅
-- Create DbContext with campaigns, tasks, artifacts, leads tables ✅
-- Add initial migration ✅
-- Configure connection string from appsettings.json ✅
-- Automatic migration on startup ✅
-**Future**: Add Supabase sync as optional Phase 2
-
-### [X] 5. Add structured logging with Serilog
-**Priority**: High  
-**Completed**: January 11, 2026
-**Configuration**:
-- Console sink (development) ✅
-- File sink (production logs in working directory) ✅
-- Structured event logging for audit trail ✅
-- Log enrichment with correlation IDs ✅
+### [ ] MVP-4: Analytics/Dashboard Page (Optional)
+**Priority**: 🟡 MEDIUM - User insight into campaign performance  
+**Frontend Components**:
+- `AnalyticsPage.tsx` - Display campaign metrics, task completion rates, lead scores
+- Charts using Recharts or similar (already in dependencies from shadcn/ui)
+**API Integration**:
+- Use existing endpoints: GET /api/v1/campaign/list, GET /api/v1/task/list/:id
+- Aggregate data client-side for charts
+**Metrics**:
+- Campaign count by status (Draft, Active, Paused, Completed)
+- Task completion rate (Done vs Pending vs Failed)
+- Average lead score per campaign
+**Tests**: Unit tests for AnalyticsPage rendering
+**Estimated**: 2-3 hours
 
 ---
 
-## Phase 2: Core Domain & State Machine (4 tasks)
+## ✅ COMPLETED TASKS (14/24)
+
+### Phase 1: Foundation (3/5 complete)
+- [X] 4. SQLite with EF Core
+- [X] 5. Serilog structured logging
+
+### Phase 2: Core Domain (4/4 complete)
+- [X] 6. Domain layer - Core models
+- [X] 7. DeterministicController state machine
+- [X] 8. Campaign repositories
+- [X] 9. Artifact storage system
+
+### Phase 3: MCP Integration (4/4 complete)
+- [X] 10. MCP protocol implementation
+- [X] 11. Desktop Commander MCP server
+- [X] 12. Playwright MCP server  
+- [X] 13. Fetch & Exa MCP servers
+
+### Phase 4: Business Logic (2/2 complete)
+- [X] 14. LLM provider abstraction
+- [X] 15. Lead scoring service
+- [X] 16. Campaign resume/recovery logic
+
+### Phase 5: API & Real-time (2/3 complete)
+- [X] 17. API Controllers
+- [X] 18. SignalR hub
+- [X] 19. React frontend connection
+
+### Phase 7: Testing (2/2 complete)
+- [X] 20. Testing infrastructure (96 backend tests, 46 frontend tests)
+- [X] 21. Frontend testing with Vitest
+
+---
+
+## 📦 BONUS TASKS (Move to Phase 2 after MVP)
+
+### Bonus-1: .env Encryption with DPAPI
+**Priority**: 🟢 LOW - Security enhancement (not blocking MVP)  
+**Why Deferred**: MVP can run with unencrypted .env for development
+**Secrets**: LinkedIn cookies, LLM API keys
+**Implementation**: Windows DPAPI (System.Security.Cryptography.ProtectedData)
+
+### Bonus-2: Aspire Orchestration
+**Priority**: 🟢 LOW - Deployment convenience (not blocking MVP)  
+**Why Deferred**: Can run backend + frontend separately for MVP demo
+**Benefits**: Single-port deployment, unified configuration
+
+### Bonus-3: Developer Documentation
+**Priority**: 🟢 LOW - Helpful but not blocking
+**Content**: Architecture diagrams, MCP integration guide, contribution guidelines
+
+### Bonus-4: Copy Specification Documents
+**Priority**: 🟢 LOW - Reference material already accessible
+**Files**: agent_specification_deterministic_desktop_outreach_agent.md, agent_chat_output_specification.md
+
+---
+
+## 🚀 MVP READINESS CHECKLIST
+
+### Backend ✅
+- [X] SQLite database with migrations
+- [X] Domain models and repositories
+- [X] DeterministicController state machine
+- [X] API Controllers (Campaign, Chat, Task, Artifact, Settings)
+- [X] SignalR hub for real-time updates
+- [X] MCP integration (Desktop Commander, Playwright, Fetch, Exa)
+- [X] 138 tests passing (96.4% pass rate)
+
+### Frontend ✅
+- [X] React + TypeScript + Vite setup
+- [X] shadcn/ui component library
+- [X] API client with typed models
+- [X] ChatPage with real-time SignalR
+- [X] 46 tests passing (89.43% coverage)
+
+### MVP Gaps 🔴
+- [ ] Campaign management UI (create, list, pause, resume, delete)
+- [ ] SignalR integration tests (backend + frontend + E2E)
+- [ ] Full application flow E2E tests with Playwright
+- [ ] Analytics/Dashboard page (optional)
+
+---
+
+## Development Commands
+
+### Backend
+```bash
+cd server
+dotnet build
+dotnet test
+cd OutreachGenie.Api
+dotnet run --launch-profile http  # Runs on http://localhost:5104
+```
+
+### Frontend
+```bash
+npm install
+npm run dev        # Runs on http://localhost:8081
+npm run test       # Vitest unit tests
+npm run lint       # ESLint
+npm run build      # Production build
+```
+
+### E2E Testing with Playwright MCP
+- Use Playwright MCP tools directly in chat
+- Or create `e2e/*.spec.ts` files and run with `npx playwright test`
+
+---
+
+## Notes
 
 ### [X] 6. Implement Domain layer - Core models
 **Priority**: Critical  
