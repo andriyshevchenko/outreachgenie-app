@@ -1,8 +1,3 @@
-<!--
-SPDX-FileCopyrightText: Copyright (c) 2025 Yegor Bugayenko
-SPDX-License-Identifier: MIT
--->
-
 # Copilot Instructions
 CRITICAL: Each generated C# file must be validated against the following coding standards and best practices. These rules ensure code quality, maintainability, and consistency across the codebase.
 
