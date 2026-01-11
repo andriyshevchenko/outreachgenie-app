@@ -39,6 +39,26 @@ builder.Services.AddScoped<ILeadRepository, LeadRepository>();
 // Register SignalR notification service
 builder.Services.AddScoped<OutreachGenie.Api.Services.IAgentNotificationService, OutreachGenie.Api.Services.AgentNotificationService>();
 
+// Register agent configuration
+builder.Services.AddSingleton(sp =>
+{
+    var config = new OutreachGenie.Api.Configuration.AgentConfiguration();
+    builder.Configuration.GetSection("AgentSettings").Bind(config);
+    return config;
+});
+
+// Register DeterministicController
+builder.Services.AddScoped<OutreachGenie.Application.Services.DeterministicController>();
+
+// Register LLM provider
+builder.Services.AddSingleton<OutreachGenie.Application.Services.Llm.ILlmProvider, OutreachGenie.Application.Services.Llm.OpenAiLlmProvider>();
+
+// TODO: Register MCP tool registry (implementation needs to be created)
+// builder.Services.AddSingleton<OutreachGenie.Application.Services.Mcp.IMcpToolRegistry, ...>();
+
+// Register background agent service
+builder.Services.AddHostedService<OutreachGenie.Api.Services.AgentHostedService>();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
