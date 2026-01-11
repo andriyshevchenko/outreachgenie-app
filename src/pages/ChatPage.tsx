@@ -1,13 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
-import { Sparkles } from 'lucide-react';
-import { ChatMessage } from '@/components/chat/ChatMessage';
 import { ChatInput } from '@/components/chat/ChatInput';
+import { ChatMessage } from '@/components/chat/ChatMessage';
 import { SuggestedActions } from '@/components/chat/SuggestedActions';
-import { Message, FileAttachment } from '@/types/agent';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { apiClient, ApiError } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { signalRHub, ChatMessageReceivedEvent } from '@/lib/signalr';
+import { apiClient, ApiError } from '@/lib/api';
+import { ChatMessageReceivedEvent, signalRHub } from '@/lib/signalr';
+import { FileAttachment, Message } from '@/types/agent';
+import { Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 export function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);

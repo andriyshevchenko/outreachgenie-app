@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
-import { ChatPage } from '@/pages/ChatPage';
-import { CampaignsPage } from '@/pages/CampaignsPage';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
-import { SettingsPage } from '@/pages/SettingsPage';
+import { CampaignsPage } from '@/pages/CampaignsPage';
+import { ChatPage } from '@/pages/ChatPage';
 import { DeveloperPage } from '@/pages/DeveloperPage';
+import { SettingsPage } from '@/pages/SettingsPage';
 import { Settings } from '@/types/agent';
+import { useState } from 'react';
 
 const defaultSettings: Settings = {
   developerMode: false,

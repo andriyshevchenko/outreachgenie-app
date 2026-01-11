@@ -1,8 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { ChatMessage } from './ChatMessage';
 import { Message } from '@/types/agent';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { ChatMessage } from './ChatMessage';
 
 describe('ChatMessage', () => {
   it('should render user message', () => {

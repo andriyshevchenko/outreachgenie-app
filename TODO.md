@@ -8,7 +8,175 @@
 
 ---
 
-## 🚨 PENDING TASKS (3 Critical)
+## 🚨 PENDING TASKS (4 Critical)
+
+### [ ] Rate Limiting for LLM & API Usage
+**Priority**: 🔴 CRITICAL - Budget Protection
+**Status**: NOT IMPLEMENTED
+
+**Problem**: 
+- No rate limiting on LLM chat endpoints
+- No rate limiting on Exa web search tool
+- Users could drain API budgets through excessive requests
+- No throttling for campaign processing
+
+**Budget Risk**:
+- OpenAI API costs per request
+- Exa web search API costs per query
+- No per-user limits
+- No global rate caps
+
+**Solution**: Implement ASP.NET Core Rate Limiting middleware
+
+**Implementation Required**:
+
+1. **Add Rate Limiting Package**:
+   ```bash
+   # Already included in .NET 7+
+   # Microsoft.AspNetCore.RateLimiting
+   ```
+
+2. **Configure in Program.cs**:
+   ```csharp
+   using System.Threading.RateLimiting;
+   using Microsoft.AspNetCore.RateLimiting;
+
+   // Add before builder.Build()
+   builder.Services.AddRateLimiter(options =>
+   {
+       // Fixed window: 10 chat messages per minute per user
+       options.AddFixedWindowLimiter("chat", opt =>
+       {
+           opt.Window = TimeSpan.FromMinutes(1);
+           opt.PermitLimit = 10;
+           opt.QueueLimit = 2;
+       });
+
+       // Sliding window: 100 API calls per hour per IP
+       options.AddSlidingWindowLimiter("api", opt =>
+       {
+           opt.Window = TimeSpan.FromHours(1);
+           opt.PermitLimit = 100;
+           opt.SegmentsPerWindow = 6;
+       });
+
+       // Token bucket: Campaign processing (burst support)
+       options.AddTokenBucketLimiter("campaigns", opt =>
+       {
+           opt.TokenLimit = 5;
+           opt.ReplenishmentPeriod = TimeSpan.FromMinutes(5);
+           opt.TokensPerPeriod = 1;
+           opt.AutoReplenishment = true;
+       });
+
+       // Concurrency: Exa search (max 3 concurrent)
+       options.AddConcurrencyLimiter("exa-search", opt =>
+       {
+           opt.PermitLimit = 3;
+           opt.QueueLimit = 10;
+       });
+
+       // Global fallback
+       options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
+           context => RateLimitPartition.GetFixedWindowLimiter(
+               partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+               factory: _ => new FixedWindowRateLimiterOptions
+               {
+                   Window = TimeSpan.FromMinutes(1),
+                   PermitLimit = 100
+               }));
+
+       options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+   });
+
+   // Enable middleware (after app.Build())
+   app.UseRateLimiter();
+   ```
+
+3. **Apply to Controllers**:
+   ```csharp
+   // ChatController.cs
+   [ApiController]
+   [Route("api/v1/[controller]")]
+   [EnableRateLimiting("chat")]  // Apply chat rate limit
+   public class ChatController : ControllerBase
+   {
+       [HttpPost]
+       [EnableRateLimiting("api")]  // Additional API limit
+       public async Task<IActionResult> SendMessage([FromBody] ChatRequest request)
+       {
+           // Will return 429 Too Many Requests if limit exceeded
+       }
+   }
+
+   // Campaign processing
+   [EnableRateLimiting("campaigns")]
+   public async Task<IActionResult> StartCampaign(int id) { }
+   ```
+
+4. **Custom Response Headers**:
+   ```csharp
+   builder.Services.AddRateLimiter(options =>
+   {
+       options.OnRejected = async (context, token) =>
+       {
+           context.HttpContext.Response.StatusCode = 429;
+           
+           if (context.Lease.TryGetMetadata(
+               MetadataName.RetryAfter, out var retryAfter))
+           {
+               context.HttpContext.Response.Headers.RetryAfter = 
+                   retryAfter.TotalSeconds.ToString();
+           }
+
+           await context.HttpContext.Response.WriteAsJsonAsync(
+               new { error = "Rate limit exceeded. Please try again later." },
+               cancellationToken: token);
+       };
+   });
+   ```
+
+5. **Configuration Settings**:
+   ```json
+   // appsettings.json
+   {
+     "RateLimiting": {
+       "Chat": {
+         "PermitLimit": 10,
+         "WindowMinutes": 1
+       },
+       "ExaSearch": {
+         "ConcurrentLimit": 3,
+         "QueueLimit": 10
+       },
+       "Api": {
+         "PermitLimit": 100,
+         "WindowHours": 1
+       }
+     }
+   }
+   ```
+
+**Testing Required**:
+- Unit test: Verify rate limiter configuration
+- Integration test: Exceed chat limit, verify 429 response
+- Integration test: Verify retry-after header
+- Load test: Validate limits under concurrent requests
+- E2E test: User exceeds limit, receives proper error message
+
+**Success Criteria**:
+- ✅ Chat endpoint limited to 10 requests/min
+- ✅ Exa search limited to 3 concurrent requests
+- ✅ 429 status with retry-after header
+- ✅ Global IP-based fallback active
+- ✅ Campaign processing throttled
+- ✅ All tests passing
+
+**References**:
+- [ASP.NET Core Rate Limiting](https://learn.microsoft.com/en-us/aspnet/core/performance/rate-limit)
+- [Rate Limiting Middleware](https://devblogs.microsoft.com/dotnet/announcing-rate-limiting-for-dotnet/)
+
+---
 
 ### [ ] Problem Details Exception Handler (RFC 7807)
 **Priority**: 🔴 CRITICAL - Production error exposure risk
@@ -301,6 +469,354 @@ var apiKey = process.StandardOutput.ReadToEnd().Trim();
 - Update E2E tests to use AppHost
 
 **Estimated**: 4-5 hours
+
+---
+
+## 📋 POST-MVP FEATURES (6 Features)
+
+### [ ] Image Artifacts in Chat with Lead Rendering
+**Priority**: 🔴 HIGH - Critical for user experience
+**Status**: NOT IMPLEMENTED
+
+**Purpose**: Display lead tables as images in chat UI with proper rendering
+
+**What**: 
+- Agent generates lead data (CSV format)
+- Backend converts to nicely formatted table image
+- Frontend displays as image artifact in chat
+- User can view leads in beautiful, formatted table UI
+
+**Implementation**:
+
+1. **Backend Image Generation** (OutreachGenie.Api/Services/ImageRenderer.cs):
+   ```csharp
+   public interface IImageRenderer
+   {
+       Task<byte[]> RenderLeadsTableAsync(List<Lead> leads);
+   }
+   
+   // Use ImageSharp or System.Drawing
+   public class LeadsTableImageRenderer : IImageRenderer
+   {
+       public async Task<byte[]> RenderLeadsTableAsync(List<Lead> leads)
+       {
+           // 1. Create image with nice styling
+           // 2. Add table headers (Name, Title, Company, etc)
+           // 3. Add rows with alternating colors
+           // 4. Add icons/badges for engagement status
+           // 5. Return PNG bytes
+       }
+   }
+   ```
+
+2. **Chat Message Type**:
+   ```csharp
+   public class ChatMessage
+   {
+       public string Content { get; set; }
+       public MessageArtifact? Artifact { get; set; }
+   }
+   
+   public class MessageArtifact
+   {
+       public string Type { get; set; } // "image", "file", "table"
+       public string Url { get; set; }   // /api/v1/artifacts/{id}
+       public Dictionary<string, object> Metadata { get; set; }
+   }
+   ```
+
+3. **Frontend ChatMessage Component** (src/components/chat/ChatMessage.tsx):
+   ```tsx
+   {message.artifact?.type === 'image' && (
+     <img 
+       src={message.artifact.url} 
+       alt="Lead table"
+       className="rounded-lg shadow-lg max-w-full"
+     />
+   )}
+   ```
+
+4. **User Avatar**: Display user profile picture alongside messages
+
+**Dependencies**:
+- `SixLabors.ImageSharp` (image generation)
+- File storage for artifacts (temp directory)
+
+**Testing**:
+- Unit test: Image generation with mock lead data
+- Integration test: Chat returns image artifact URL
+- E2E test: Verify image displays in chat UI
+
+**Success Criteria**:
+- ✅ Leads rendered as beautiful table images
+- ✅ User avatar displayed in chat
+- ✅ Images load and display correctly
+- ✅ Mobile-responsive image sizing
+
+---
+
+### [ ] File Artifacts (Word, Excel, PDF) in Chat
+**Priority**: 🟡 MEDIUM - Nice to have
+**Status**: NOT IMPLEMENTED (UI exists)
+
+**Purpose**: Display file attachments with nice icons and previews
+
+**What**:
+- Agent generates files (Excel reports, Word docs, PDFs)
+- Chat displays with appropriate icons (📊 Excel, 📄 Word, 📋 PDF)
+- User can download or preview inline
+
+**Implementation**:
+
+1. **File Artifact Types**:
+   ```csharp
+   public enum ArtifactType
+   {
+       Excel,    // .xlsx
+       Word,     // .docx
+       Pdf,      // .pdf
+       Csv,      // .csv
+       Image     // .png, .jpg
+   }
+   ```
+
+2. **Frontend File Artifact Component**:
+   ```tsx
+   <FileArtifact
+     type="excel"
+     fileName="Campaign_Report.xlsx"
+     fileSize="245 KB"
+     downloadUrl="/api/v1/artifacts/123/download"
+     icon={<FileSpreadsheet className="w-6 h-6" />}
+   />
+   ```
+
+3. **Icon Library**: Use Lucide icons for file types
+
+**Success Criteria**:
+- ✅ Files display with correct icons
+- ✅ Download button works
+- ✅ File size and name shown
+- ✅ Preview for images/PDFs
+
+---
+
+### [ ] File Upload via UI
+**Priority**: 🟡 MEDIUM - Enhances chat functionality
+**Status**: NOT IMPLEMENTED (UI exists)
+
+**Purpose**: Users can upload files to provide context to agent
+
+**What**:
+- User drags/drops files into chat
+- Agent receives file content in context
+- Useful for: uploading lead lists, campaign templates, etc.
+
+**Implementation**:
+
+1. **Upload Endpoint** (ChatController.cs):
+   ```csharp
+   [HttpPost("upload")]
+   public async Task<IActionResult> UploadFile(IFormFile file)
+   {
+       // 1. Validate file type and size
+       // 2. Save to temp storage
+       // 3. Return file ID for chat context
+   }
+   ```
+
+2. **Frontend Upload Component** (src/components/chat/FileUpload.tsx):
+   ```tsx
+   <div
+     onDrop={handleDrop}
+     onDragOver={handleDragOver}
+     className="border-2 border-dashed rounded-lg p-4"
+   >
+     <input type="file" onChange={handleFileSelect} />
+     Drop files here or click to browse
+   </div>
+   ```
+
+3. **File Size Limits**:
+   - Max 10MB per file
+   - Types: CSV, XLSX, TXT, PDF, images
+
+**Success Criteria**:
+- ✅ Drag & drop works
+- ✅ File preview before upload
+- ✅ Progress indicator
+- ✅ Agent can access uploaded files
+
+---
+
+### [ ] Campaign Analytics Page
+**Priority**: 🟢 LOW - Future enhancement
+**Status**: NOT IMPLEMENTED (UI exists at /analytics)
+
+**Purpose**: Display campaign performance metrics and insights
+
+**What**:
+- Campaign metrics: open rates, reply rates, conversion rates
+- Charts: engagement over time, top-performing messages
+- Lead funnel visualization
+- Export analytics as PDF/Excel
+
+**Implementation**:
+
+1. **Analytics Controller**:
+   ```csharp
+   [Route("api/v1/analytics")]
+   public class AnalyticsController : ControllerBase
+   {
+       [HttpGet("campaign/{id}")]
+       public async Task<CampaignAnalytics> GetCampaignAnalytics(int id)
+       {
+           // Query metrics from database
+           // Calculate rates and trends
+       }
+   }
+   ```
+
+2. **Frontend Analytics Page** (src/pages/AnalyticsPage.tsx):
+   ```tsx
+   // Already exists, needs backend data
+   <Chart data={campaignMetrics} type="line" />
+   <MetricCard title="Open Rate" value="42%" />
+   ```
+
+3. **Metrics to Track**:
+   - Messages sent/delivered/opened
+   - Replies received
+   - Meetings scheduled
+   - Conversion rate
+   - Time-to-response
+
+**Success Criteria**:
+- ✅ Charts display correctly
+- ✅ Metrics calculated accurately
+- ✅ Export to Excel/PDF works
+- ✅ Filters by date range
+
+---
+
+### [ ] Cloud Database Sync (Multi-Device)
+**Priority**: 🟢 LOW - Future feature
+**Status**: NOT IMPLEMENTED
+
+**Purpose**: Sync SQLite data across devices via cloud storage
+
+**Problem**: 
+- Currently: Each device has separate SQLite database
+- User wants: Access campaigns from laptop + desktop
+
+**Cheapest Options**:
+
+1. **OneDrive/Google Drive Sync** (FREE):
+   - Store SQLite file in synced folder (`~/OneDrive/OutreachGenie/`)
+   - OS handles sync automatically
+   - **Cost**: $0 (uses existing cloud storage)
+   - **Limitation**: Concurrent writes may corrupt database
+
+2. **Supabase Free Tier** (FREE up to 500MB):
+   - PostgreSQL cloud database
+   - Replace SQLite with Supabase
+   - **Cost**: $0/month (up to 500MB, 2GB bandwidth)
+   - **Pros**: Multi-device, real-time sync, no corruption
+
+3. **Turso (LibSQL)** (FREE up to 9GB):
+   - SQLite-compatible cloud database
+   - Minimal code changes (keep Entity Framework)
+   - **Cost**: $0/month (up to 9GB, 1B row reads)
+   - **Pros**: SQLite syntax, multi-device, no migration pain
+
+4. **PocketBase** (Self-hosted, FREE):
+   - User hosts on their own server/Raspberry Pi
+   - SQLite-based with sync
+   - **Cost**: $0 (user provides hardware)
+
+**Recommended**: Turso (FREE + SQLite-compatible)
+
+**Implementation**:
+
+1. **Add Turso NuGet Package**:
+   ```bash
+   dotnet add package Turso.EntityFrameworkCore
+   ```
+
+2. **Update Program.cs**:
+   ```csharp
+   builder.Services.AddDbContext<AppDbContext>(options =>
+   {
+       var tursoUrl = builder.Configuration["Turso:DatabaseUrl"];
+       var tursoToken = builder.Configuration["Turso:AuthToken"];
+       options.UseTurso(tursoUrl, tursoToken);
+   });
+   ```
+
+3. **User Configuration**: Settings page to enter Turso credentials
+
+**Success Criteria**:
+- ✅ Data syncs between devices
+- ✅ No data loss on concurrent edits
+- ✅ FREE tier sufficient for MVP
+- ✅ Easy setup for users
+
+---
+
+### [ ] Lead Table Rendering in UI
+**Priority**: 🔴 HIGH - Critical UX feature
+**Status**: NOT IMPLEMENTED
+
+**Purpose**: Display leads in a beautiful, interactive table
+
+**What**: 
+- Agent finds leads → displays in sortable/filterable table
+- Actions: Click to open LinkedIn, mark as contacted, etc.
+- Export to CSV/Excel
+
+**Implementation**:
+
+1. **Backend**: Returns lead data as structured JSON
+
+2. **Frontend LeadsTable Component** (src/components/LeadsTable.tsx):
+   ```tsx
+   import { DataTable } from "@/components/ui/data-table"
+   
+   const columns = [
+     { header: "Name", accessorKey: "name" },
+     { header: "Title", accessorKey: "title" },
+     { header: "Company", accessorKey: "company" },
+     { header: "LinkedIn", cell: ({ row }) => (
+       <a href={row.linkedinUrl}>View Profile</a>
+     )},
+     { header: "Actions", cell: ({ row }) => (
+       <Button onClick={() => markContacted(row.id)}>
+         Mark Contacted
+       </Button>
+     )}
+   ]
+   
+   <DataTable columns={columns} data={leads} />
+   ```
+
+3. **Features**:
+   - Sorting by any column
+   - Filtering by company/title
+   - Pagination (50 leads per page)
+   - Export to CSV
+   - Bulk actions (select multiple)
+
+4. **Styling**: Use shadcn/ui Table component with custom styling
+
+**Dependencies**:
+- `@tanstack/react-table` (already available)
+- shadcn/ui `table` component
+
+**Success Criteria**:
+- ✅ Table displays lead data
+- ✅ Sorting/filtering works
+- ✅ Mobile-responsive
+- ✅ Export to CSV works
 
 ---
 

@@ -83,11 +83,11 @@ public sealed class DeterministicControllerLlmTests
             It.IsAny<IReadOnlyList<McpTool>>(),
             It.IsAny<string>(),
             default)).ReturnsAsync(new ActionProposal
-        {
-            TaskId = taskId,
-            ActionType = "task_complete",
-            Parameters = "{\"result\":\"success\"}",
-        });
+            {
+                TaskId = taskId,
+                ActionType = "task_complete",
+                Parameters = "{\"result\":\"success\"}",
+            });
 
         await this.controller.ExecuteTaskWithLlmAsync(taskId);
 
