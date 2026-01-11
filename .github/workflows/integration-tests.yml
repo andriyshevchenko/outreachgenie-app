@@ -50,7 +50,7 @@ jobs:
         run: dotnet build OutreachGenie.slnx --no-restore --configuration Release
 
       - name: Run Integration Tests
-        run: dotnet test OutreachGenie.slnx --no-build --configuration Release --filter "FullyQualifiedName~IntegrationTests" --verbosity normal --logger "console;verbosity=detailed"
+        run: dotnet test OutreachGenie.slnx --no-build --configuration Release --filter "FullyQualifiedName~IntegrationTests" --verbosity normal --logger "trx;LogFileName=integration-tests.trx" --results-directory ./TestResults
         env:
           CI: true
 
@@ -59,4 +59,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-results
-          path: server/**/TestResults/**/*
+          path: server/TestResults/**/*

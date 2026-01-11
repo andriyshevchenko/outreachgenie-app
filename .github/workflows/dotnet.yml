@@ -38,4 +38,11 @@ jobs:
         run: dotnet build OutreachGenie.slnx --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test OutreachGenie.slnx --no-build --configuration Release --filter "FullyQualifiedName!~IntegrationTests" --verbosity normal
+        run: dotnet test OutreachGenie.slnx --no-build --configuration Release --filter "FullyQualifiedName!~IntegrationTests" --verbosity normal --logger "trx;LogFileName=unit-tests.trx" --results-directory ./TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: server/TestResults/**/*
