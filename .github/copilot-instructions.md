@@ -3,7 +3,8 @@ SPDX-FileCopyrightText: Copyright (c) 2025 Yegor Bugayenko
 SPDX-License-Identifier: MIT
 -->
 
-# C# Code Generation Rules [v1.0]
+# Copilot Instructions
+Follow these rules when generating C# code for this repository.
 
 ## Usage Guide
 - Rules have severity: [C]ritical, [H]igh, [M]edium, [L]ow
