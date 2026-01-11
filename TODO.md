@@ -7,11 +7,13 @@
 
 ---
 
-## 🚨 PENDING TASKS (6 Tasks - Sorted by Priority)
+## 🚨 PENDING TASKS (9 Tasks - Sorted by Priority)
 
 ### [ ] MVP-0: Agent Background Service (THE MISSING BRAIN)
 **Priority**: 🔴🔴 BLOCKING - Makes campaigns actually process
 **Status**: NOT IMPLEMENTED
+
+**Critical Gap**: Campaigns are created but never processed - they stay in "Initializing" status forever. No LinkedIn automation happens.
 
 **File Structure**:
 ```
@@ -35,7 +37,15 @@ server/OutreachGenie.Api/Services/
            while (!stoppingToken.IsCancellationRequested)
            {
                using var scope = _scopeFactory.CreateScope();
-               await ProcessActiveCampaignsAsync(scope, stoppingToken);
+               var campaignRepo = scope.ServiceProvider.GetRequiredService<ICampaignRepository>();
+               var controller = scope.ServiceProvider.GetRequiredService<IDeterministicController>();
+               var activeCampaigns = await campaignRepo.GetActiveCampaignsAsync();
+               
+               foreach (var campaign in activeCampaigns)
+               {
+                   await controller.ExecuteTaskWithLlmAsync(campaign.Id);
+               }
+               
                await Task.Delay(_config.PollingIntervalMs, stoppingToken);
            }
        }
@@ -56,48 +66,184 @@ server/OutreachGenie.Api/Services/
    }
    ```
 
+**What This Enables**:
+- ✅ Campaigns automatically process in background
+- ✅ Agent navigates LinkedIn via Playwright MCP
+- ✅ Leads are extracted and scored
+- ✅ Artifacts are created with real data
+- ✅ SignalR events notify UI in real-time
+- ✅ Campaign status updates: Initializing → Active → Completed
+
 **Success Criteria**:
 - ✅ Service starts with application
-- ✅ Polls for active campaigns
-- ✅ Processes campaigns concurrently
-- ✅ Handles errors gracefully
+- ✅ Polls for active campaigns every 60 seconds
+- ✅ Processes campaigns concurrently (max 3)
+- ✅ Handles errors gracefully with retry logic
 - ✅ Logs all operations
+- ✅ Campaigns transition through state machine correctly
 
-**Estimated**: 4-6 hours
+**Estimated**: 6-9 hours
 
 ---
 
 ### [ ] MVP-4: Chat-to-LLM Integration
 **Priority**: 🔴🔴 BLOCKING - Core chat functionality
-**Status**: NOT IMPLEMENTED
+**Status**: Returns hardcoded placeholder text
 
-**What**: Connect chat UI to LLM backend for agent conversations
+**Critical Gap**: Users can't interact with agent via chat. No AI explanations or narration.
 
-**Implementation**:
+**Current Problem**:
+```csharp
+// server/OutreachGenie.Api/Controllers/ChatController.cs
+public async Task<IActionResult> SendMessage([FromBody] ChatRequest request)
+{
+    // Currently: return "Agent response placeholder"
+    return Ok(new { message = "Agent response placeholder" });
+}
+```
 
-1. **ChatController endpoint already exists** at `/api/v1/chat`
-2. **Wire up to LLM service**:
+**What's Needed**:
+
+1. **Wire up to LLM service**:
    ```csharp
    [HttpPost]
    public async Task<IActionResult> SendMessage([FromBody] ChatRequest request)
    {
-       var response = await _llmService.GetCompletionAsync(
-           request.Message, 
+       var campaignContext = await _campaignRepo.GetByIdAsync(request.CampaignId);
+       var artifacts = await _artifactRepo.GetByCampaignIdAsync(request.CampaignId);
+       
+       var systemPrompt = BuildSystemPrompt(campaignContext, artifacts);
+       var response = await _llmProvider.GenerateResponseAsync(
+           systemPrompt,
+           request.Message,
            request.ConversationHistory
        );
-       return Ok(new ChatResponse { Message = response });
+       
+       // Emit SignalR event for real-time UI update
+       await _agentHub.Clients.All.SendAsync("ChatMessageReceived", new {
+           campaignId = request.CampaignId,
+           message = response,
+           timestamp = DateTime.UtcNow
+       });
+       
+       return Ok(new { message = response });
    }
    ```
 
-3. **Frontend already wired**: ChatPage.tsx calls API
+2. **Frontend already wired**: ChatPage.tsx calls API correctly
+
+**What This Enables**:
+- ✅ User can ask: "Show me the leads you found"
+- ✅ Agent responds with actual data from artifacts
+- ✅ User can ask: "Why did you score this lead highest?"
+- ✅ Agent explains its scoring heuristics
+- ✅ Conversation is contextual (knows campaign state)
 
 **Success Criteria**:
-- ✅ User sends message → receives LLM response
-- ✅ Conversation history maintained
-- ✅ Error handling for API failures
+- ✅ User sends message → receives LLM response (not placeholder)
+- ✅ Agent has access to campaign context and artifacts
+- ✅ Conversation history maintained across messages
+- ✅ Error handling for LLM API failures
 - ✅ Loading states in UI
+- ✅ Rate limiting applied (10 msgs/min)
 
 **Estimated**: 2-3 hours
+
+---
+
+### [ ] Task Execution Wiring
+**Priority**: 🔴 HIGH - Required for automation
+**Status**: NOT IMPLEMENTED
+
+**Critical Gap**: DeterministicController exists but tasks never execute. The controller has the logic but nothing calls it.
+
+**Problem**:
+- `DeterministicController.ExecuteTaskWithLlmAsync()` exists with full state machine logic
+- But AgentHostedService (which should call it) doesn't exist
+- So tasks remain in "Pending" status forever
+
+**Solution**: This is automatically solved by MVP-0 (AgentHostedService)
+
+**Dependencies**: MVP-0 must be completed first
+
+**Estimated**: Included in MVP-0
+
+---
+
+### [ ] Artifact Generation & Storage
+**Priority**: 🔴 HIGH - Core data persistence
+**Status**: PARTIAL - Infrastructure exists, no generation happens
+
+**Critical Gap**: Artifact storage system works, but no artifacts are generated because tasks never execute.
+
+**What Exists**:
+- ✅ Artifact entity with versioning
+- ✅ ArtifactRepository with CRUD operations
+- ✅ Artifact API endpoints (`/api/v1/artifacts`)
+- ✅ 29 passing integration tests
+
+**What's Missing**:
+- ❌ No artifacts created during campaign execution
+- ❌ No lead extraction artifacts
+- ❌ No message template artifacts
+- ❌ No scoring heuristics artifacts
+
+**Example Flow (Currently Broken)**:
+```
+1. User creates campaign "Find CTOs in SF"
+2. Background service should process it (NOT IMPLEMENTED)
+3. Agent navigates LinkedIn (NOT HAPPENING)
+4. Agent extracts leads (NOT HAPPENING)
+5. Agent creates Lead artifact (NOT HAPPENING)
+6. UI displays leads (WORKING, but no data to display)
+```
+
+**Solution**: This is automatically solved by MVP-0 + MVP-4
+
+**Dependencies**: MVP-0 and MVP-4 must be completed first
+
+**Estimated**: Included in MVP-0/MVP-4
+
+---
+
+### [ ] Campaign State Transitions
+**Priority**: 🔴 HIGH - Core workflow
+**Status**: PARTIAL - State machine exists, transitions don't happen
+
+**Critical Gap**: Campaigns stuck in "Initializing" status because state machine never runs.
+
+**What Exists**:
+- ✅ CampaignStatus enum (Initializing, Draft, Active, Paused, Completed, Failed)
+- ✅ State transition validation rules
+- ✅ Campaign entity with status tracking
+- ✅ Unit tests for state transitions
+
+**What's Missing**:
+- ❌ No code triggers state transitions
+- ❌ Campaigns created via UI never move from "Initializing" → "Active"
+- ❌ No automatic transition to "Completed" when all tasks done
+- ❌ No automatic transition to "Failed" on errors
+
+**Example Expected Flow**:
+```
+User creates campaign
+  ↓
+Status: Initializing
+  ↓
+Background service picks it up (NOT IMPLEMENTED)
+  ↓
+Status: Active
+  ↓
+All tasks complete (NEVER HAPPENS)
+  ↓
+Status: Completed
+```
+
+**Solution**: This is automatically solved by MVP-0 (AgentHostedService calls controller which manages state)
+
+**Dependencies**: MVP-0 must be completed first
+
+**Estimated**: Included in MVP-0
 
 ---
 
@@ -471,4 +617,45 @@ const columns = [
 - **Test Coverage**: Backend 96.4%, Frontend 89.4%
 - **CI Status**: ✅ All 5 workflows passing
 - **Lines of Code**: ~15,000
-- **Completion**: 17/19 tasks (89%)
+- **Infrastructure Completion**: 17/17 tasks (100%)
+- **Agent Processing**: 0/5 core tasks (0%)
+- **Overall MVP Progress**: 17/22 tasks (77%)
+
+---
+
+## 🔍 Critical Understanding
+
+### What's Built (Infrastructure - 100%)
+- ✅ Beautiful React UI with real-time updates
+- ✅ Complete REST API with 49 passing tests
+- ✅ DeterministicController with full state machine logic
+- ✅ MCP integration layer (4 servers: Playwright, Desktop Commander, Fetch, Exa)
+- ✅ LLM abstraction with OpenAI provider
+- ✅ SignalR real-time messaging
+- ✅ SQLite database with EF Core
+- ✅ Artifact storage with versioning
+- ✅ 198 tests with 90%+ coverage
+
+### What's Missing (Agent Brain - 0%)
+- ❌ **AgentHostedService** - The loop that makes campaigns process
+- ❌ **Chat-to-LLM wiring** - Actual AI conversations
+- ❌ **Task execution** - Calling the controller's logic
+- ❌ **Artifact generation** - Creating leads/messages from LinkedIn
+- ❌ **State transitions** - Moving campaigns through lifecycle
+
+### The Gap in Simple Terms
+```
+Infrastructure: All pipes connected, valves installed, monitoring ready
+Agent: No water flowing because pump not turned on
+```
+
+The system has all the pieces (database, API, UI, MCP servers, LLM provider, state machine) but they don't connect because:
+1. No background service polls campaigns and calls the controller
+2. Chat endpoint returns placeholder instead of calling LLM
+3. Everything else cascades from these 2 missing pieces
+
+### Time to Complete MVP
+- **MVP-0** (Background Service): 6-9 hours
+- **MVP-4** (Chat-to-LLM): 2-3 hours  
+- **Testing & Integration**: 2-3 hours
+- **Total**: ~10-15 hours to fully working LinkedIn automation
