@@ -195,6 +195,24 @@ npm run ci
 - Frontend: 89.4% (46 tests)
 - E2E: 10 Playwright tests
 
+## 📊 Code Metrics
+
+```bash
+# Calculate SLOC (Source Lines of Code)
+npm run sloc
+
+# Show detailed breakdown by file
+npm run sloc -- --by-file
+
+# Show breakdown by language and file
+npm run sloc -- --by-lang
+```
+
+**Current SLOC**: ~14,000 lines
+- TypeScript: ~6,700 lines (Frontend)
+- C#: ~6,600 lines (Backend)
+- Other: ~700 lines (Config, styles, etc.)
+
 ## 📋 Implementation Decisions (Ready to Code)
 
 ### MVP-0: Agent Background Service
