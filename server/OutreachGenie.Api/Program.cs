@@ -64,8 +64,8 @@ builder.Services.AddSingleton<OutreachGenie.Application.Services.Llm.ILlmProvide
     return new OutreachGenie.Application.Services.Llm.OpenAiLlmProvider(apiKey, llmConfig, logger);
 });
 
-// TODO: Register MCP tool registry (implementation needs to be created)
-// builder.Services.AddSingleton<OutreachGenie.Application.Services.Mcp.IMcpToolRegistry, ...>();
+// Register MCP tool registry
+builder.Services.AddSingleton<OutreachGenie.Application.Services.Mcp.IMcpToolRegistry, OutreachGenie.Application.Services.Mcp.McpToolRegistry>();
 
 // Register background agent service
 builder.Services.AddHostedService<OutreachGenie.Api.Services.AgentHostedService>();
