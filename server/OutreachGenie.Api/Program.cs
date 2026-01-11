@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using OutreachGenie.Application.Interfaces;
 using OutreachGenie.Infrastructure.Persistence;
+using OutreachGenie.Infrastructure.Persistence.Repositories;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +29,12 @@ builder.Host.UseSerilog((context, configuration) =>
 // Add services to the container.
 builder.Services.AddDbContext<OutreachGenieDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register repositories
+builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+builder.Services.AddScoped<IArtifactRepository, ArtifactRepository>();
+builder.Services.AddScoped<ILeadRepository, LeadRepository>();
 
 builder.Services.AddControllers();
 

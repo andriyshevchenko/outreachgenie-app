@@ -203,13 +203,15 @@
 
 ### [ ] 18. Create API Controllers (NOT Minimal APIs)
 **Priority**: Critical  
+**Status**: In Progress - CampaignController complete ✅
 **Controllers**:
-- `CampaignController` - Create, Get, List, Pause, Resume, Delete
-- `ChatController` - SendMessage, GetHistory (non-authoritative)
-- `TaskController` - List by campaign, Get status
-- `ArtifactController` - Get by type/key, Create, Update
-- `SettingsController` - Get/Update configuration
-**Route Pattern**: `/api/v1/{controller}/{action}`
+- `CampaignController` - Create, Get, List, Pause, Resume, Delete ✅
+- `ChatController` - SendMessage, GetHistory (non-authoritative) - TODO
+- `TaskController` - List by campaign, Get status - TODO
+- `ArtifactController` - Get by type/key, Create, Update - TODO
+- `SettingsController` - Get/Update configuration - TODO
+**Route Pattern**: `/api/v1/{controller}/{action}` ✅
+**DI**: Repositories registered in Program.cs ✅
 
 ### [ ] 19. Add SignalR hub for real-time updates
 **Priority**: High  
