@@ -7,6 +7,7 @@ import { Message, FileAttachment } from '@/types/agent';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { apiClient, ApiError } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { signalRHub, ChatMessageReceivedEvent } from '@/lib/signalr';
 
 export function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -21,6 +22,29 @@ export function ChatPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    const handleChatMessage = (event: ChatMessageReceivedEvent) => {
+      const newMessage: Message = {
+        id: event.messageId,
+        role: event.role as 'user' | 'assistant',
+        content: event.content,
+        timestamp: new Date(event.timestamp),
+      };
+      setMessages((prev) => [...prev, newMessage]);
+      setIsTyping(false);
+    };
+
+    if (signalRHub.connectionState !== null) {
+      signalRHub.onChatMessageReceived(handleChatMessage);
+    }
+
+    return () => {
+      if (signalRHub.connectionState !== null) {
+        signalRHub.offAll();
+      }
+    };
+  }, []);
 
   const sendMessageToBackend = async (userMessage: string) => {
     setIsTyping(true);
