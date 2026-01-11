@@ -58,7 +58,7 @@ public sealed class LeadScoringService : ILeadScoringService
     {
         if (artifact == null)
         {
-            return ScoringHeuristics.Default();
+            return new DefaultScoringHeuristics().Value();
         }
 
         var json = JsonDocument.Parse(artifact.ContentJson);

@@ -27,13 +27,4 @@ public sealed class ScoringHeuristics(double title, double headline, double loca
     /// Gets the weight for location alignment.
     /// </summary>
     public double LocationWeight { get; } = location;
-
-    /// <summary>
-    /// Creates default heuristics with balanced weights.
-    /// </summary>
-    /// <returns>Default scoring configuration.</returns>
-    public static ScoringHeuristics Default()
-    {
-        return new ScoringHeuristics(0.5, 0.3, 0.2);
-    }
 }

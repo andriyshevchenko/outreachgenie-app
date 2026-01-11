@@ -1,14 +1,31 @@
 namespace OutreachGenie.Application.Services;
 
 /// <summary>
-/// Represents validation result.
+/// Represents validation result with immutable state.
+/// Encapsulates validation outcome and error details.
+/// Usage: new ValidationResult(true) for success, new ValidationResult(false, "message") for failure.
 /// </summary>
 public sealed class ValidationResult
 {
-    private ValidationResult(bool isValid, string? errorMessage = null)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValidationResult"/> class.
+    /// </summary>
+    /// <param name="valid">Indicates whether validation passed.</param>
+    /// <param name="message">Error message if validation failed.</param>
+    public ValidationResult(bool valid, string message)
     {
-        this.IsValid = isValid;
-        this.ErrorMessage = errorMessage;
+        this.IsValid = valid;
+        this.ErrorMessage = message;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValidationResult"/> class for successful validation.
+    /// </summary>
+    /// <param name="valid">Indicates whether validation passed.</param>
+    public ValidationResult(bool valid)
+    {
+        this.IsValid = valid;
+        this.ErrorMessage = string.Empty;
     }
 
     /// <summary>
@@ -19,18 +36,5 @@ public sealed class ValidationResult
     /// <summary>
     /// Gets validation error message.
     /// </summary>
-    public string? ErrorMessage { get; }
-
-    /// <summary>
-    /// Creates successful validation result.
-    /// </summary>
-    /// <returns>Success result.</returns>
-    public static ValidationResult Success() => new(true);
-
-    /// <summary>
-    /// Creates failed validation result.
-    /// </summary>
-    /// <param name="errorMessage">Error message.</param>
-    /// <returns>Failure result.</returns>
-    public static ValidationResult Failure(string errorMessage) => new(false, errorMessage);
+    public string ErrorMessage { get; }
 }

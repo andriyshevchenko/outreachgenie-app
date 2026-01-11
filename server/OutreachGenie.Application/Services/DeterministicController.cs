@@ -80,21 +80,21 @@ public sealed class DeterministicController
             var task = state.Tasks.FirstOrDefault(t => t.Id == proposal.TaskId.Value);
             if (task == null)
             {
-                return ValidationResult.Failure($"Task {proposal.TaskId} not found in campaign {state.Campaign.Id}");
+                return new ValidationResult(false, $"Task {proposal.TaskId} not found in campaign {state.Campaign.Id}");
             }
 
             if (task.Status != TaskStatus.Pending && task.Status != TaskStatus.Retrying)
             {
-                return ValidationResult.Failure($"Task {task.Id} has status {task.Status}, cannot execute");
+                return new ValidationResult(false, $"Task {task.Id} has status {task.Status}, cannot execute");
             }
         }
 
         if (state.Campaign.Status != CampaignStatus.Active)
         {
-            return ValidationResult.Failure($"Campaign {state.Campaign.Id} is not active, current status: {state.Campaign.Status}");
+            return new ValidationResult(false, $"Campaign {state.Campaign.Id} is not active, current status: {state.Campaign.Status}");
         }
 
-        return ValidationResult.Success();
+        return new ValidationResult(true);
     }
 
     /// <summary>
