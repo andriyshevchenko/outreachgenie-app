@@ -67,6 +67,9 @@ builder.Services.AddSingleton<OutreachGenie.Application.Services.Llm.ILlmProvide
 // Register MCP tool registry
 builder.Services.AddSingleton<OutreachGenie.Application.Services.Mcp.IMcpToolRegistry, OutreachGenie.Application.Services.Mcp.McpToolRegistry>();
 
+// Register MCP initialization service (starts MCP servers on application startup)
+builder.Services.AddHostedService<OutreachGenie.Api.Services.McpInitializationService>();
+
 // Register background agent service
 builder.Services.AddHostedService<OutreachGenie.Api.Services.AgentHostedService>();
 

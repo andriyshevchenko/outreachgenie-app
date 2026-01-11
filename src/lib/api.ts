@@ -104,10 +104,19 @@ class ApiClient {
 
     // Chat endpoints
     async sendMessage(message: string, campaignId?: string) {
-        // Backend requires a CampaignId (Guid). For now, use a default/null GUID if not provided
-        // In production, we should either create a campaign first or allow nullable CampaignId
+        // If no campaignId provided, fetch the first available campaign
+        let actualCampaignId = campaignId;
+        
+        if (!actualCampaignId) {
+            const campaigns = await this.getCampaigns();
+            if (campaigns.length === 0) {
+                throw new Error('No campaigns available. Please create a campaign first.');
+            }
+            actualCampaignId = campaigns[0].id;
+        }
+
         const payload = {
-            campaignId: campaignId || '00000000-0000-0000-0000-000000000000',
+            campaignId: actualCampaignId,
             message,
         };
 
