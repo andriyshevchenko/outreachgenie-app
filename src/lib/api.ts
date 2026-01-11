@@ -70,34 +70,34 @@ class ApiClient {
 
   // Campaign endpoints
   async getCampaigns() {
-    return this.request<Campaign[]>('/api/v1/campaign/list');
+    return this.request<Campaign[]>('/api/v1/campaign');
   }
 
   async getCampaign(id: string) {
-    return this.request<Campaign>(`/api/v1/campaign/get/${id}`);
+    return this.request<Campaign>(`/api/v1/campaign/${id}`);
   }
 
   async createCampaign(request: CreateCampaignRequest) {
-    return this.request<Campaign>('/api/v1/campaign/create', {
+    return this.request<Campaign>('/api/v1/campaign', {
       method: 'POST',
       body: JSON.stringify(request),
     });
   }
 
   async pauseCampaign(id: string) {
-    return this.request<void>(`/api/v1/campaign/pause/${id}`, {
+    return this.request<void>(`/api/v1/campaign/${id}/pause`, {
       method: 'POST',
     });
   }
 
   async resumeCampaign(id: string) {
-    return this.request<void>(`/api/v1/campaign/resume/${id}`, {
+    return this.request<void>(`/api/v1/campaign/${id}/resume`, {
       method: 'POST',
     });
   }
 
   async deleteCampaign(id: string) {
-    return this.request<void>(`/api/v1/campaign/delete/${id}`, {
+    return this.request<void>(`/api/v1/campaign/${id}`, {
       method: 'DELETE',
     });
   }
@@ -173,6 +173,7 @@ export interface Campaign {
 }
 
 export enum CampaignStatus {
+  Initializing = 'Initializing',
   Draft = 'Draft',
   Active = 'Active',
   Paused = 'Paused',

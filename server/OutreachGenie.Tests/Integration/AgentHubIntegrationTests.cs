@@ -17,7 +17,7 @@ public sealed class AgentHubIntegrationTests : IAsyncLifetime
         this.receivedEvents = [];
 
         this.connection = new HubConnectionBuilder()
-            .WithUrl("http://localhost:5104/hubs/agent")
+            .WithUrl("http://localhost:5000/hubs/agent")
             .Build();
     }
 

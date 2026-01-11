@@ -39,7 +39,11 @@ builder.Services.AddScoped<ILeadRepository, LeadRepository>();
 // Register SignalR notification service
 builder.Services.AddScoped<OutreachGenie.Api.Services.IAgentNotificationService, OutreachGenie.Api.Services.AgentNotificationService>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // Add SignalR
 builder.Services.AddSignalR();

@@ -162,6 +162,8 @@ export function CampaignsPage() {
 
   const getStatusBadgeVariant = (status: CampaignStatus): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
+      case CampaignStatus.Initializing:
+        return 'secondary';
       case CampaignStatus.Active:
         return 'default';
       case CampaignStatus.Paused:
@@ -268,7 +270,7 @@ export function CampaignsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {campaigns.map((campaign) => (
-              <Card key={campaign.id}>
+              <Card key={campaign.id} data-campaign-card data-campaign-id={campaign.id}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
