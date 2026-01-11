@@ -51,7 +51,18 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddScoped<OutreachGenie.Application.Services.IDeterministicController, OutreachGenie.Application.Services.DeterministicController>();
 
 // Register LLM provider
-builder.Services.AddSingleton<OutreachGenie.Application.Services.Llm.ILlmProvider, OutreachGenie.Application.Services.Llm.OpenAiLlmProvider>();
+builder.Services.AddSingleton<OutreachGenie.Application.Services.Llm.ILlmProvider>(sp =>
+{
+    var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? string.Empty;
+    var temperature = builder.Configuration.GetValue<double>("LlmSettings:Temperature", 0.7);
+    var maxTokens = builder.Configuration.GetValue<int>("LlmSettings:MaxTokens", 2000);
+    var model = builder.Configuration.GetValue<string>("LlmSettings:Model", "gpt-4") ?? "gpt-4";
+    var maxRetries = builder.Configuration.GetValue<int>("LlmSettings:MaxRetries", 3);
+    var timeoutSeconds = builder.Configuration.GetValue<int>("LlmSettings:TimeoutSeconds", 60);
+    var llmConfig = new OutreachGenie.Application.Services.Llm.LlmConfiguration(temperature, maxTokens, model, maxRetries, timeoutSeconds);
+    var logger = sp.GetRequiredService<ILogger<OutreachGenie.Application.Services.Llm.OpenAiLlmProvider>>();
+    return new OutreachGenie.Application.Services.Llm.OpenAiLlmProvider(apiKey, llmConfig, logger);
+});
 
 // TODO: Register MCP tool registry (implementation needs to be created)
 // builder.Services.AddSingleton<OutreachGenie.Application.Services.Mcp.IMcpToolRegistry, ...>();
