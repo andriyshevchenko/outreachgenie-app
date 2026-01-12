@@ -13,15 +13,19 @@ outreachgenie-app/
 
 ## 🚀 Getting Started
 
-### Backend Solution
+### Visual Studio Solution
 
-The backend is a .NET 10 solution using the new SLNX (XML Solution) format.
+The repository uses a .NET 10 solution (SLNX format) that includes both backend and frontend projects.
 
 ```bash
 cd backend
 dotnet sln list           # List projects in the solution
 dotnet sln add <project>  # Add projects to the solution
 ```
+
+The solution includes:
+- **Frontend**: React + TypeScript application (OutreachGenie.Frontend.esproj)
+- Backend projects can be added as needed
 
 ### Frontend Application
 
