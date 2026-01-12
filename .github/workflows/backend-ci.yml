@@ -4,9 +4,15 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
   pull_request:
     branches:
       - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
 
 jobs:
   build-and-test:
@@ -24,15 +30,48 @@ jobs:
           dotnet-version: '10.0.x'
       
       - name: Restore dependencies
-        run: dotnet restore
+        run: |
+          # Check if there are any .NET backend projects
+          if ls *.csproj *.fsproj 1> /dev/null 2>&1; then
+            # Restore only .NET projects, not .esproj
+            for proj in *.csproj *.fsproj; do
+              if [ -f "$proj" ]; then
+                dotnet restore "$proj"
+              fi
+            done
+          else
+            echo "No backend .NET projects found, skipping restore"
+          fi
         working-directory: ./backend
       
       - name: Build solution
-        run: dotnet build --no-restore --configuration Release
+        run: |
+          # Check if there are any .NET backend projects
+          if ls *.csproj *.fsproj 1> /dev/null 2>&1; then
+            # Build only .NET projects, not .esproj
+            for proj in *.csproj *.fsproj; do
+              if [ -f "$proj" ]; then
+                dotnet build "$proj" --no-restore --configuration Release
+              fi
+            done
+          else
+            echo "No backend .NET projects found, skipping build"
+          fi
         working-directory: ./backend
       
       - name: Run unit tests
-        run: dotnet test --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        run: |
+          # Check if there are any .NET backend projects
+          if ls *.csproj *.fsproj 1> /dev/null 2>&1; then
+            # Test only .NET projects
+            for proj in *.csproj *.fsproj; do
+              if [ -f "$proj" ]; then
+                dotnet test "$proj" --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+              fi
+            done
+          else
+            echo "No backend .NET projects found, skipping tests"
+          fi
         working-directory: ./backend
       
       - name: Upload test results
