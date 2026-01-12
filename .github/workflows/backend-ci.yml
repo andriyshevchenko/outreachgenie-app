@@ -71,7 +71,7 @@ jobs:
             for proj in "${projects[@]}"; do
               echo "Testing $proj"
               # Use unique log filename based on project name
-              proj_name=$(basename "$proj" | sed 's/\.[^.]*$//')
+              proj_name=$(basename "${proj%.*}")
               dotnet test "$proj" --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=${proj_name}-test-results.trx"
             done
           else
