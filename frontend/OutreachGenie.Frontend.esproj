@@ -11,6 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="**" Exclude="node_modules\**;dist\**" />
+    <None Include="src\**;public\**;*.json;*.md;*.html;*.ts;*.js;*.config.*" Exclude="node_modules\**;dist\**" />
   </ItemGroup>
 </Project>
