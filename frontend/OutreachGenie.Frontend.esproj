@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.784122">
+  <PropertyGroup>
+    <StartupCommand>npm run dev</StartupCommand>
+    <JavaScriptTestFramework>Vitest</JavaScriptTestFramework>
+    <!-- Allows the build (or compile) JavaScript project to be in an npm package -->
+    <ShouldRunBuildScript>false</ShouldRunBuildScript>
+    <!-- Build command is optional -->
+    <BuildCommand>npm run build</BuildCommand>
+    <!-- Test commands -->
+    <TestCommand>npm run test</TestCommand>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="**" Exclude="node_modules\**;dist\**" />
+  </ItemGroup>
+</Project>
