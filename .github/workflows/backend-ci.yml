@@ -32,12 +32,13 @@ jobs:
       - name: Restore dependencies
         run: |
           # Check if there are any .NET backend projects
-          if ls *.csproj *.fsproj 1> /dev/null 2>&1; then
+          shopt -s nullglob
+          projects=(*.csproj *.fsproj)
+          if [ ${#projects[@]} -gt 0 ]; then
             # Restore only .NET projects, not .esproj
-            for proj in *.csproj *.fsproj; do
-              if [ -f "$proj" ]; then
-                dotnet restore "$proj"
-              fi
+            for proj in "${projects[@]}"; do
+              echo "Restoring $proj"
+              dotnet restore "$proj"
             done
           else
             echo "No backend .NET projects found, skipping restore"
@@ -47,12 +48,13 @@ jobs:
       - name: Build solution
         run: |
           # Check if there are any .NET backend projects
-          if ls *.csproj *.fsproj 1> /dev/null 2>&1; then
+          shopt -s nullglob
+          projects=(*.csproj *.fsproj)
+          if [ ${#projects[@]} -gt 0 ]; then
             # Build only .NET projects, not .esproj
-            for proj in *.csproj *.fsproj; do
-              if [ -f "$proj" ]; then
-                dotnet build "$proj" --no-restore --configuration Release
-              fi
+            for proj in "${projects[@]}"; do
+              echo "Building $proj"
+              dotnet build "$proj" --no-restore --configuration Release
             done
           else
             echo "No backend .NET projects found, skipping build"
@@ -62,12 +64,15 @@ jobs:
       - name: Run unit tests
         run: |
           # Check if there are any .NET backend projects
-          if ls *.csproj *.fsproj 1> /dev/null 2>&1; then
+          shopt -s nullglob
+          projects=(*.csproj *.fsproj)
+          if [ ${#projects[@]} -gt 0 ]; then
             # Test only .NET projects
-            for proj in *.csproj *.fsproj; do
-              if [ -f "$proj" ]; then
-                dotnet test "$proj" --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
-              fi
+            for proj in "${projects[@]}"; do
+              echo "Testing $proj"
+              # Use unique log filename based on project name
+              proj_name=$(basename "$proj" | sed 's/\.[^.]*$//')
+              dotnet test "$proj" --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=${proj_name}-test-results.trx"
             done
           else
             echo "No backend .NET projects found, skipping tests"
