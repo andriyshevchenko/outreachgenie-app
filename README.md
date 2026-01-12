@@ -6,11 +6,22 @@ A LinkedIn outreach automation platform with AI-powered messaging.
 
 ```
 outreachgenie-app/
+├── backend/           # .NET 10 backend solution (SLNX format)
 ├── frontend/          # React + TypeScript frontend application
 └── README.md          # This file
 ```
 
 ## 🚀 Getting Started
+
+### Backend Solution
+
+The backend is a .NET 10 solution using the new SLNX (XML Solution) format.
+
+```bash
+cd backend
+dotnet sln list           # List projects in the solution
+dotnet sln add <project>  # Add projects to the solution
+```
 
 ### Frontend Application
 
