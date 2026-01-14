@@ -40,9 +40,11 @@ class ApiClient {
                 };
 
                 try {
-                    const errorData = await response.json();
+                    const errorData: unknown = await response.json();
                     error.details = errorData;
-                    error.message = errorData.message || error.message;
+                    if (errorData && typeof errorData === 'object' && 'message' in errorData) {
+                        error.message = String(errorData.message) || error.message;
+                    }
                 } catch {
                     // Response body might not be JSON
                 }
@@ -58,11 +60,8 @@ class ApiClient {
             return {} as T;
         } catch (error) {
             if (error instanceof Error && !(error as ApiError).statusCode) {
-                throw {
-                    message: error.message,
-                    statusCode: 0,
-                    details: error,
-                } as ApiError;
+                const apiError = new ApiError(0, error.message, error);
+                throw apiError;
             }
             throw error;
         }

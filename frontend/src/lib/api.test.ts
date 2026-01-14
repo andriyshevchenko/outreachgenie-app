@@ -15,7 +15,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockData,
+                json: () => mockData,
             });
 
             const result = await apiClient['request']('/api/test');
@@ -48,7 +48,7 @@ describe('ApiClient', () => {
                 status: 404,
                 statusText: 'Not Found',
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => errorData,
+                json: () => errorData,
             });
 
             await expect(apiClient['request']('/api/test')).rejects.toMatchObject({
@@ -77,7 +77,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockCampaigns,
+                json: () => mockCampaigns,
             });
 
             const result = await apiClient.getCampaigns();
@@ -94,7 +94,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockCampaign,
+                json: () => mockCampaign,
             });
 
             const result = await apiClient.getCampaign('123');
@@ -113,7 +113,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockResponse,
+                json: () => mockResponse,
             });
 
             const result = await apiClient.createCampaign(request);
@@ -132,7 +132,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => ({}),
+                json: () => ({}),
             });
 
             await apiClient.pauseCampaign('123');
@@ -149,7 +149,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => ({}),
+                json: () => ({}),
             });
 
             await apiClient.resumeCampaign('123');
@@ -166,7 +166,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => ({}),
+                json: () => ({}),
             });
 
             await apiClient.deleteCampaign('123');
@@ -190,7 +190,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockResponse,
+                json: () => mockResponse,
             });
 
             const result = await apiClient.sendMessage('Hello');
@@ -217,7 +217,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockResponse,
+                json: () => mockResponse,
             });
 
             await apiClient.sendMessage('Hello', '123-456');
@@ -241,7 +241,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockHistory,
+                json: () => mockHistory,
             });
 
             const result = await apiClient.getChatHistory('123');
@@ -262,7 +262,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockTasks,
+                json: () => mockTasks,
             });
 
             const result = await apiClient.getTasks('123');
@@ -279,7 +279,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockTask,
+                json: () => mockTask,
             });
 
             const result = await apiClient.getTask('1');
@@ -300,7 +300,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockArtifacts,
+                json: () => mockArtifacts,
             });
 
             const result = await apiClient.getArtifacts('123');
@@ -319,7 +319,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockArtifacts,
+                json: () => mockArtifacts,
             });
 
             await apiClient.getArtifacts('123', 'leads');
@@ -335,7 +335,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockArtifact,
+                json: () => mockArtifact,
             });
 
             const result = await apiClient.getArtifact('123', 'context', 'main');
@@ -360,7 +360,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockResponse,
+                json: () => mockResponse,
             });
 
             const result = await apiClient.createArtifact(request);
@@ -387,7 +387,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => mockSettings,
+                json: () => mockSettings,
             });
 
             const result = await apiClient.getSettings();
@@ -409,7 +409,7 @@ describe('ApiClient', () => {
             (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
                 ok: true,
                 headers: new Headers({ 'content-type': 'application/json' }),
-                json: async () => ({}),
+                json: () => ({}),
             });
 
             await apiClient.updateSettings(settings);

@@ -65,7 +65,8 @@ describe('ChatPage', () => {
     });
     
     // API should be called
-    expect(api.apiClient.sendMessage).toHaveBeenCalledWith(
+    const sendMessage = api.apiClient.sendMessage;
+    expect(sendMessage).toHaveBeenCalledWith(
       expect.stringContaining('prospects')
     );
     
@@ -98,11 +99,13 @@ describe('ChatPage', () => {
     });
     
     // Resolve the promise
-    resolvePromise!({
-      messageId: '123',
-      content: 'Response',
-      timestamp: '2026-01-11T15:00:00Z',
-    });
+    if (resolvePromise) {
+      resolvePromise({
+        messageId: '123',
+        content: 'Response',
+        timestamp: '2026-01-11T15:00:00Z',
+      });
+    }
     
     // Typing indicator should disappear
     await waitFor(() => {
@@ -181,8 +184,9 @@ describe('ChatPage', () => {
     await user.type(input, 'Hello agent{Enter}');
     
     // Verify message was sent via Enter key
+    const sendMessage = api.apiClient.sendMessage;
     await waitFor(() => {
-      expect(api.apiClient.sendMessage).toHaveBeenCalledWith(expect.stringContaining('Hello'));
+      expect(sendMessage).toHaveBeenCalledWith(expect.stringContaining('Hello'));
     });
   });
 
@@ -202,8 +206,9 @@ describe('ChatPage', () => {
     await user.click(button);
     
     // Message should be sent
+    const sendMessage = api.apiClient.sendMessage;
     await waitFor(() => {
-      expect(api.apiClient.sendMessage).toHaveBeenCalled();
+      expect(sendMessage).toHaveBeenCalled();
     });
   });
 
