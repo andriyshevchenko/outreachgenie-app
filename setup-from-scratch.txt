@@ -1,0 +1,861 @@
+how do you set up a net project to
+
+ensure it's successful in the long run
+
+in this video I will show you six things
+
+that I always add to my net projects to
+
+improve the developer experience for
+
+myself and of course for my team I'm
+
+going to start from a blank Visual
+
+Studio solution and I'm going to
+
+introduce these six P that I just
+
+mentioned one step at a time and I'm
+
+going to start by introducing a new
+
+project so let's click add new project
+
+and I'm going to create an asp.net core
+
+web API let's just call it web API I'm
+
+going to click next I'm going to be
+
+using net version 9 for this
+
+demonstration I won't be using
+
+authentication I will configure it for
+
+https I'm going to leave the container
+
+support unchecked for the time being and
+
+I also won't be using Aspire
+
+orchestration let's for example use
+
+controllers instead of minimal apis and
+
+then let's create this web API so visual
+
+studio is going to scaffold my net 9
+
+application if I open up the program
+
+file this is what I can see inside I
+
+have controller Services open API and a
+
+few middleware components configured and
+
+the first thing that I want to set up is
+
+support for enforcing code style inside
+
+of my visual studio solution so how can
+
+we do this there are a few options you
+
+can right click on your project and then
+
+click add and right at the bottom of
+
+this context menu there is an option to
+
+add a new editor config when you create
+
+an editor config file inside of a net
+
+project is going to apply to all of the
+
+files in that project if you have a
+
+nested editor config in some of the sub
+
+folders then all of the files within
+
+that folder will follow the new editor
+
+config now you can also create an editor
+
+config on the solution level so let's
+
+create a new editor config file and this
+
+is the default one that Visual Studio is
+
+going to create you can spend some time
+
+to check out everything that's inside
+
+you can also customize it based on your
+
+requirements but the default editor
+
+config file contains some same default
+
+values when it comes to code style rules
+
+inside of your solution so let's assume
+
+that we are happy with this and we don't
+
+want to customize everything then we can
+
+continue using this editor config now if
+
+you want to be using something that's
+
+pre-built there is an option from the
+
+net runtime repository and you can find
+
+the editor config file right here so if
+
+you don't want to use the default one
+
+that's scaffolded in Visual Studio
+
+here's an editor config file that you
+
+can add in its place so it also contains
+
+a bunch of customized configurations
+
+that sometimes also match what we
+
+already had by default but you can go
+
+ahead and explore everything that's
+
+inside so this is one of the options and
+
+I'm going to leave a link to this editor
+
+config file in the description of this
+
+video so this is going to take care of
+
+the code style aspect now the next thing
+
+that I like to set up is my build
+
+configuration and this has two aspects
+
+that you can control with a custom file
+
+so let's go ahead and click add and then
+
+new item I'm going to create a new XML
+
+file that's going to be called directory
+
+build props and then I'm going to
+
+replace the contents of this file which
+
+are created by default with this XML
+
+structure with the directory build props
+
+you can configure some build options for
+
+your net projects and this is going to
+
+apply to all of the projects that you
+
+have inside of this solution the root
+
+element is called a project and then
+
+inside of it I have a property group
+
+where I can Define some custom values
+
+for example I can conf figure the target
+
+framework for all of the projects in
+
+this solution and let's say I want them
+
+all to Target net 9 I can also enable
+
+implicit usings notable reference types
+
+and then a couple of properties that are
+
+related to code quality more on this
+
+later but I also want to show you one
+
+more thing that this allows me to do so
+
+I specify the target framework and
+
+implicit using zable reference types in
+
+the directory build props file however I
+
+also have these values in the web API
+
+project file so what I can do now
+
+is just delete all of this and then the
+
+directory build props file is going to
+
+apply these build properties when I
+
+build my project so now if I temporarily
+
+comment out the code quality properties
+
+and I right click my project and then
+
+build you will see that the build is
+
+succeeding so the directory build props
+
+file is working as expected now there is
+
+one more type of file that you can
+
+introduce to simplify your build
+
+configuration so again I'm going to add
+
+a new item it's going to be XML file and
+
+this time I will call it directory
+
+packages props so let's create this and
+
+I'm going to replace the default XML
+
+content with this one again I'm
+
+specifying my project as the root
+
+element I have a property group and the
+
+next value is called manage package
+
+versions centrally and this will allow
+
+me to implement centralized package
+
+management for my nouet packages so how
+
+does this actually work if I go back to
+
+the web API I have just one nouet
+
+package it's inside of this item group
+
+and I have a package reference
+
+specifying what is the nouet package
+
+that I want to install and also what is
+
+the version that I want to installed but
+
+with directory packages props I can
+
+manage the nougat package versions in a
+
+centralized place so how do we actually
+
+do this so I'm going to copy the package
+
+reference that I have in the web API
+
+project and paste it in the item group
+
+in the directory packages props file now
+
+instead of having a package reference I
+
+want to have a package version prop
+
+property and then I can just specify
+
+that I want to include the Microsoft
+
+spet core open API package with the
+
+version
+
+9.0.0 and then how do I actually use
+
+this well I go back to the web API and
+
+instead of specifying the version
+
+explicitly I can just include a package
+
+reference and say which nougat package I
+
+want to be using and this allows me to
+
+manage my package versions centrally and
+
+this is really helpful when you have
+
+multiple net projects that are all
+
+referencing the same nugget package and
+
+previously you would be managing the
+
+package versions in each of your net
+
+projects but with this approach we
+
+centralize the version management and we
+
+are only referencing our nougat packages
+
+where we want to use them so now let me
+
+show you what happens when we install a
+
+new nougat package let's say I search
+
+for resilience because I want to install
+
+the resilience libraries let's go ahead
+
+and add the Microsoft extensions HTTP
+
+resilience library and for example I
+
+will also add Microsoft extensin
+
+resilience so after I click install and
+
+remember that I was targeting my web API
+
+project if I take a look at the project
+
+file you can see that I only have a
+
+package reference I don't have a version
+
+anymore where previously this would
+
+specify the version the nou package
+
+version is now specified in the
+
+directory packages drops file so you can
+
+see the new nougat packages are
+
+available here so now whenever I want to
+
+just reference a nougat package I go
+
+ahead and create a package reference and
+
+include the package name so this takes
+
+care of my build configuration I have a
+
+file that allows me to centralize my
+
+build properties and also centralize my
+
+nougat packages the next thing I want to
+
+introduce is support for code quality
+
+and let me look for a nuget package that
+
+contains some static code analyzers that
+
+you can add to your net projects the one
+
+that I want to install is called soner
+
+analyzer C so let me go ahead and add
+
+the latest version and if I take a look
+
+at the web API project file I have my
+
+package installed and the version
+
+specified in my directory packages props
+
+but what if you want to include some
+
+nugg package like the sonor analyzer C
+
+package into all of your projects inside
+
+of a solution let me add one more
+
+project so I will say add new project
+
+and let's create a class library and I'm
+
+just going to give it a Dy name of
+
+contracts let's go ahead and create it
+
+with net 9 and if I take a look at the N
+
+packages that I have installed you can
+
+see I don't have any so remember this
+
+for a moment now if I go into my
+
+directory build drops and I add another
+
+item group this allows me to specify
+
+some properties that I want apply to all
+
+of my projects now I will exclude
+
+projects that end with DC Pro which is
+
+the docker compose startup project and
+
+then what I can do is take the package
+
+reference for sonar analyzer C and pull
+
+it out of the web API project and I can
+
+move it into this item group here in the
+
+directory Bild props and this is going
+
+to add a package reference for this nug
+
+package to all of the projects inside my
+
+solution so if I take a look at the
+
+Nugget packages that I have installed
+
+for the web API project you will see
+
+that sonor analyzer C is installed with
+
+the latest version now if I refresh the
+
+nug packages in the contracts project
+
+you will see that sonor analyzer C is
+
+also installed and it also has the
+
+latest version so just a recap of how
+
+this works the package reference is
+
+added from the directory build props and
+
+the directory packages props controls
+
+the package version so now I can
+
+uncomment the these properties here
+
+pertaining to code quality and this
+
+allows me to enforce my static code
+
+analysis rules that we have built in
+
+with net plus the rules that are
+
+introduced with the sonor analyzer C
+
+package and essentially I want to treat
+
+any warning that pertains to code
+
+quality as an error this is going to
+
+fail my build so now if I try to build
+
+my solution you will see that the build
+
+is going to fail and then you're going
+
+to get the list of potential code
+
+quality issues and then it's up to you
+
+how you're going to fix these you can
+
+for example take a look at a specific
+
+error here it's saying that there is an
+
+async overload of the run method and I
+
+should use that instead so I can go
+
+ahead and say await app run async and
+
+this is going to solve one of the
+
+problems now there are some problems
+
+that you may not think are relevant for
+
+your solution for example do I want to
+
+be calling configur we on all of my
+
+Asing calls if I don't want to use this
+
+rule I can go ahead and suppress it so
+
+you can configure the severity for a
+
+specific rule let's say I set the
+
+severity To None the error is going to
+
+disappear but there's going to be a new
+
+comment or section to be more precise
+
+and it's going to be added in the editor
+
+config file let's say I call this static
+
+code analysis rule customizations and
+
+here you can configure this severity for
+
+any of the rules that you don't think
+
+are relevant for your solution now I'm
+
+going to spend a moment to fix the build
+
+errors that I currently have and after
+
+you are done customizing the rules that
+
+you don't want to follow and fixing the
+
+ones that you do your build should
+
+succeed so if I go ahead and build my
+
+solution you will see that the build is
+
+passing so what is the next thing that
+
+I'd like to explore let's say we want to
+
+add support for containerization of our
+
+executable project this is going to be
+
+the web API so the simplest approach is
+
+adding a Docker file you can go ahead
+
+and right click your project click add
+
+and then Docker support and you can
+
+choose the operating system for the
+
+container so it can be either windows or
+
+Linux now when it comes to the build
+
+type you can create a Docker file or you
+
+can use the net SDK this allows you to
+
+use the built-in support in net for
+
+creating a container I won't be
+
+exploring this right now but I'm going
+
+to leave some documentation links under
+
+the video now let's go ahead and create
+
+our Docker file and this is going to
+
+scaffold a default Docker file that you
+
+can use to build a Docker image and then
+
+run that as a container this is going to
+
+set up a multi-stage build with Docker
+
+and essentially this is the image that
+
+we're going to be running it's asp.net 9
+
+however we also have to reference the
+
+Microsoft SDK so that we can restore and
+
+build our net project before we can
+
+publish it with the net publish command
+
+and finally run this as a Docker
+
+container I covered the basics of
+
+working with Docker that you can watch
+
+in a popup that's going to show up above
+
+so if you want to learn more go ahead
+
+and check out that video now let's let's
+
+say that we are happy with this and this
+
+is enough for us to enable
+
+containerization what I can do next is
+
+build an image for the web API Project
+
+based on this Docker file and then use
+
+Docker to run that image as a container
+
+so now I have a simple way to run my
+
+containerized application the next thing
+
+I want to introduce into my project is
+
+container orchestration support now this
+
+is going to allow me to run my net
+
+application as well as any external
+
+services that have options that I can
+
+run in a container and there are two two
+
+ways how you can approach this the first
+
+option that also plays well with Docker
+
+files is using Docker compos for
+
+container orchestration you can go ahead
+
+and right click on your project and then
+
+add container orchestrator support you
+
+will be prompted to choose which
+
+orchestrator you want to use I will use
+
+Docker compose and then let's scaffold
+
+the default Docker compose project this
+
+is going to add another project to my
+
+solution it's called Docker compose and
+
+here I have my docker compose yaml file
+
+right now I have just one service
+
+defined inside it's my web API and it's
+
+going to run based on the docker file
+
+that we scaffolded in the previous step
+
+but you can also use this to introduce
+
+any services that you want to use for
+
+example I can run a postest container
+
+with just a few lines of yamel code your
+
+other option and this is a more recent
+
+thing that you can use is net Aspire and
+
+you can just easily introduce it by
+
+right clicking on your project and then
+
+adding net asp ire orchestrator support
+
+so let's say I also want to use this
+
+approach I'm going to scaffold the
+
+orchestrator and this is going to create
+
+two project there is a service default
+
+project that contains some sane default
+
+values and my build is kind of messed up
+
+right now because I'm using centralized
+
+package management and the scaffolded
+
+projects do not so I'm going to fix this
+
+behind the scenes but essentially this
+
+is going to configure Telemetry service
+
+Discovery and some of the other things
+
+that do and Aspire introduces and it's
+
+also going to scaffold my project as an
+
+Aspire project now let me fix these
+
+errors and after I clean up any issues
+
+my Aspire project should compile so here
+
+I can go ahead and introduce some
+
+aspired packages and if I want to have
+
+feature parity with the docker compos
+
+one I can go ahead and add a net Aspire
+
+package install Aspire hosting postgress
+
+so let's go ahead and add that and now I
+
+can add a postgress resource I can say
+
+builder at postgress give it the name so
+
+let's say demo database I can save this
+
+in a variable let's call it postgress
+
+and then I can add a reference to the
+
+web API project and introduce a
+
+reference to postgress I can also wait
+
+for the postgress container to start
+
+before running the web API project with
+
+the Aspire orchestrator so this gives
+
+you two options to orchestrate your
+
+applications you can either use net
+
+Aspire which is a more modern approach
+
+but still uses Docker under the hood or
+
+you can use Docker compose which is well
+
+known well supported and there are a lot
+
+of useful resources about working with
+
+Docker compos so that covers container
+
+orchestration now the last thing I want
+
+to introduce is a simple continuous
+
+integration workflow this is an example
+
+using GitHub actions which is going to
+
+run on every push to the main branch and
+
+I'm going to run this using the net
+
+Version 9 STK and the action is more or
+
+less straightforward we are setting up
+
+the net STK with the respective version
+
+then I'm restoring my net project
+
+building it testing it and Publishing it
+
+so this is going to give you some quick
+
+feedback
+
+if you encounter a build issue or you
+
+get an error from one of these static
+
+code analyzers then you're going to run
+
+tests on your project and you should
+
+definitely be writing tests from the
+
+start and then I also have an optional
+
+publish step if you want to deploy this
+
+application somewhere like a cloud
+
+provider so what should be your next
+
+step let's say you want to deploy your
+
+application to the cloud here is a video
+
+that covers how to do just that we're
+
+going to deploy a net application to the
+
+Azure container app service and we're
+
+going to automate it with a C CD
+
+pipeline thanks a lot for watching this
+
+video let me know in the comments what
+
+you think about it and of course until
+
+next time stay awesome
+
+

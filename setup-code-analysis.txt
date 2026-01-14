@@ -1,0 +1,487 @@
+hi my name is Milan and in today's video
+
+we're going to be talking about code
+
+quality and how you can enforce it using
+
+static code analysis I'm going to
+
+introduce you to the code analyzers that
+
+are natively available in.net and also
+
+some nougat packages that you can add to
+
+your projects we introduce additional
+
+static code analyzers to your solution a
+
+common problem when working in a team
+
+environment is enforcing consistent code
+
+style across a solution while
+
+maintaining code quality one tool that
+
+you have at your disposal in a.net
+
+Project is the editor config file inside
+
+of an editor config file you can
+
+predefine code style rules that you want
+
+to enforce inside of your.net project if
+
+you define the editor config as a
+
+solution level item like I did in this
+
+example it's going to apply to every
+
+project inside of your solution and this
+
+is something that you generally want
+
+inside of an editor config file you can
+
+Define things like indentation and
+
+spacing new line preferences and then
+
+the most important thing is you can
+
+Define net coding conventions
+
+there are many coding conventions that
+
+you can Define such as preferring
+
+expression body members you can Define
+
+naming conventions null check
+
+preferences modifier preferences and so
+
+on
+
+another tool that you have at your
+
+disposal is static code analysis there
+
+are code analyzers that natively come
+
+with the latest versions of.net
+
+but I want to introduce you to two
+
+additional nougat packages that you can
+
+add to your projects to introduce
+
+additional static code analyzers
+
+so let's take the domain project for
+
+example and I'm going to install some
+
+new nougat packages
+
+the first one that I want is style cop
+
+so I'm going to search for style cop the
+
+one that I'm going to install is the
+
+style cup analyzers nougat package and
+
+I'm even going to install the
+
+pre-release version but you can go ahead
+
+and install the latest table version if
+
+you want to so let me install style cup
+
+and then I'm going to show you the next
+
+nougat package that we're going to add
+
+now I'm going to search for sonar
+
+analyzer
+
+and the nougat package that I want to
+
+install is the sonar analyzer c-sharp
+
+nuget package so I'm going to go ahead
+
+and install that one as well
+
+and with these two nougat packages
+
+installed we're going to have additional
+
+static code analyzers that are going to
+
+run on the domain project so let me try
+
+to build the domain project and I'm
+
+going to show you what's going on
+
+if I take a look at the output window
+
+when I build the domain project you can
+
+see that I suddenly have a lot of
+
+warnings that are coming up
+
+I'm going to switch to the error list
+
+window to make this more explicit you
+
+can see that we have 34 warnings that
+
+have now popped up when we added the new
+
+nuget packages
+
+what you see here is a lot of rules that
+
+are being enforced by Static code
+
+analysis you can see the code for the
+
+specific rule that you have broken and
+
+you have a short description explaining
+
+what exactly is wrong
+
+these types of warnings are a little
+
+used to us if nobody pays attention to
+
+them so there's a way to enforce to
+
+treat warnings as errors I'm going to
+
+add a new property inside of this
+
+property group the property that we want
+
+to add is the treat warnings as errors
+
+property
+
+so I'm going to go ahead and add it and
+
+we want to give it a value of true
+
+so that we can actually enforce treating
+
+warnings as errors so I'm going to apply
+
+this change and I'm going to build the
+
+domain project again and we're going to
+
+take a look at what's going on now
+
+so now if you take a look at the output
+
+window you can see that suddenly instead
+
+of warnings that we had a moment ago we
+
+have errors and our build is actually
+
+failing this is generally a good thing
+
+because now you get instant feedback
+
+when you write code that does not pass
+
+code quality checks that you want to
+
+enforce in your solution
+
+another benefit is that your build
+
+pipelines are going to crash if you
+
+commit a piece of code that does not
+
+pass a code quality check so this makes
+
+it very easy to enforce code quality
+
+across your entire team with static code
+
+analysis
+
+some of these static code analyzers are
+
+very opinionated and I don't personally
+
+agree with every rule that they
+
+recommend that I should follow so I like
+
+to be able to turn off certain rules to
+
+reduce the noise in my projects let's
+
+take this rule as the example
+
+the code for this rule is sa
+
+1518 and it says that the file is
+
+required to end with a single new line
+
+character
+
+the fix for this is very simple you just
+
+add a new line here and this rule is no
+
+longer going to appear but what if you
+
+wanted to actually not have an empty
+
+line at the end of each file if I revert
+
+the change the code analyzer is going to
+
+show an error again so how do I turn off
+
+this rule if I need to
+
+there's a very simple way to do this you
+
+can click show potential fixes
+
+and then you want to configure the
+
+severity of the specific Rule and you
+
+can say non-silent suggestion warning or
+
+error if you want to turn this rule off
+
+completely you have to click none and if
+
+your editor config file is open at the
+
+same time you'll see that it's going to
+
+receive a change
+
+if I navigate back to my editor config
+
+file you can see that I have a new
+
+change here which was added by that
+
+configuration of the severity Rule and
+
+it has added the code for this rule this
+
+one is from style cop analyzers and it
+
+sets the severity for that rule To None
+
+I like to keep all my static code
+
+analysis rules in a specific place
+
+inside of my editor config so at the
+
+bottom I have a section for every static
+
+code analyzer that I want to configure
+
+this is the section for style cop
+
+analyzers the one that we just
+
+configured was 1518 so I place it right
+
+here because I like to sort them that
+
+way it's much easier to keep track of
+
+what rules you have configured
+
+as you can see I already have a bunch of
+
+rules configured here both for style cup
+
+analyzers and also sonar analyzers
+
+there's additional.net code analyzers
+
+that are natively available and I have a
+
+CA error code at the start that's how
+
+you can know them and then there's
+
+additional rules enforced by Visual
+
+Studio which have a prefix of IDE in
+
+their error code
+
+I leave this up to you to decide which
+
+of the rules you want to turn on or off
+
+it's best to come up with a convention
+
+that fits your specific project and then
+
+just enforce it through the editor
+
+config file I want to touch on one more
+
+thing that could seem problematic and
+
+that's the fact that we are adding these
+
+static code analyzers as nougat packages
+
+it's not uncommon for a.net solution to
+
+contain a large number of projects I've
+
+personally worked on solutions that
+
+contain between 50 and 100 projects and
+
+I'm sure there are solutions out there
+
+that have even more projects than that
+
+so it's going to be very cumbersome to
+
+go into each project and add these two
+
+nougat packages so wouldn't it be great
+
+if there was a way to add these nuget
+
+packages to all of the projects inside
+
+of this solution of course there is a
+
+way to do this and I'm going to add a
+
+new solution item and I'm going to show
+
+you how we're going to use this to
+
+introduce nougat packages across all
+
+projects inside of a solution I'm going
+
+to add a file to our solution that is
+
+called directory dot build dot props
+
+this is an XML file and I'm going to
+
+paste in some configuration inside of it
+
+and as you can see what I'm doing here
+
+is I'm adding the nougat packages for
+
+style cup and sonar analyzers and I'm
+
+also enforcing some project level
+
+settings such as treat warnings as hers
+
+that we had earlier inside of the domain
+
+project
+
+what this is going to do is it's going
+
+to apply this property group to every CS
+
+project file inside of your solution and
+
+it's also going to install these nougat
+
+packages to all of your projects inside
+
+of your solution so this is a simple way
+
+to enforce static code analysis across
+
+all of your projects these nuget
+
+packages here are going to be in
+
+conflict with the ones that we added
+
+inside of the domain project just a
+
+moment ago so you're going to have to
+
+remove them and I'm also going to remove
+
+the treat warnings as error setting and
+
+we're going to leave the domain project
+
+in the same state that we found it but
+
+we're going to enforce the static code
+
+analysis using the directory build drops
+
+file
+
+so let's try to build the domain project
+
+again and see what's going on
+
+you can see that the build failed again
+
+which means our directory build props is
+
+working this is a great way to enforce
+
+cold style and code quality across your
+
+entire team and it works inside of build
+
+pipelines which really shortens your
+
+feedback loop when any bad code is
+
+committed to the repository I hope that
+
+you enjoyed this video about enforcing
+
+code quality with static code analyzers
+
+so make sure that you smash that like
+
+button on your way out and also
+
+subscribe to my YouTube channel so that
+
+you don't miss any of my future videos
+
+until next time stay awesome
+
+
