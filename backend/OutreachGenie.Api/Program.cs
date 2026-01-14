@@ -1,6 +1,8 @@
+// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="OutreachGenie">
 // Copyright (c) OutreachGenie. All rights reserved.
 // </copyright>
+// -----------------------------------------------------------------------
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 

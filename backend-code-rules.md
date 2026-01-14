@@ -29,13 +29,17 @@
 ## Architecture & Structure [A]
 
 - **[A1-H]** The DDD paradigm must be respected.
+- **[A2-H]** Favor "fail fast" over "fail safe".
 
 ## Method Requirements [M]
 
+- **[M1-C]** Methods must never return null (use Option-like patterns).
+- **[M2-C]** null must not be passed as an argument.
 - **[M3-C]** Type checks (`is`, `as`) and casting are strictly prohibited.
 - **[M4-C]** Reflection on object internals is strictly prohibited.
 - **[M5-H]** Methods must be declared in interfaces and implemented in classes.
 - **[M6-H]** Public methods that do not implement an interface must be avoided.
+- **[M7-H]** Exception messages must include maximum contextual information.
 - **[M8-M]** Method names must respect CQRS: commands are verbs, queries are nouns.
 - **[M9-M]** Method names must be single verbs, never compound or composite.
 - **[M10-M]** Methods should avoid checking incoming arguments for validity.

@@ -18,6 +18,7 @@
 - **[T9-H]** Tests may not share state.
 - **[T12-M]** Test names must be full English sentences describing behavior.
 - **[T13-H]** Tests must verify only the behavior stated in their name.
+- **[T14-H]** Tests must close all resources they open.
 - **[T16-M]** Tests must not assert on side effects such as logging.
 - **[T17-L]** Tests must not validate constructors or property accessors.
 - **[T18-M]** Tests must prepare a clean state at the beginning.

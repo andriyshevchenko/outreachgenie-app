@@ -13,6 +13,7 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement;
 };
 
+// Action type constants - prefix with _ since only used for type derivation
 const _actionTypes = {
   ADD_TOAST: "ADD_TOAST",
   UPDATE_TOAST: "UPDATE_TOAST",
