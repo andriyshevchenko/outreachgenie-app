@@ -18,7 +18,7 @@ describe('ApiClient', () => {
                 json: () => mockData,
             });
 
-            const result = await apiClient['request']('/api/test');
+            const result: unknown = await apiClient['request']('/api/test');
 
             expect(global.fetch).toHaveBeenCalledWith(
                 'http://localhost:5000/api/test',

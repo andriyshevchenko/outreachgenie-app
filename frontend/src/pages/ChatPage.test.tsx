@@ -65,8 +65,7 @@ describe('ChatPage', () => {
     });
     
     // API should be called
-    const sendMessage = api.apiClient.sendMessage;
-    expect(sendMessage).toHaveBeenCalledWith(
+    expect(vi.mocked(api.apiClient.sendMessage)).toHaveBeenCalledWith(
       expect.stringContaining('prospects')
     );
     
@@ -184,9 +183,8 @@ describe('ChatPage', () => {
     await user.type(input, 'Hello agent{Enter}');
     
     // Verify message was sent via Enter key
-    const sendMessage = api.apiClient.sendMessage;
     await waitFor(() => {
-      expect(sendMessage).toHaveBeenCalledWith(expect.stringContaining('Hello'));
+      expect(vi.mocked(api.apiClient.sendMessage)).toHaveBeenCalledWith(expect.stringContaining('Hello'));
     });
   });
 
@@ -206,9 +204,8 @@ describe('ChatPage', () => {
     await user.click(button);
     
     // Message should be sent
-    const sendMessage = api.apiClient.sendMessage;
     await waitFor(() => {
-      expect(sendMessage).toHaveBeenCalled();
+      expect(vi.mocked(api.apiClient.sendMessage)).toHaveBeenCalled();
     });
   });
 
