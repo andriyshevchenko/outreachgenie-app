@@ -14,7 +14,7 @@ const navItems = [
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
-export function Sidebar({ currentPage, onNavigate, developerMode }: SidebarProps) {
+export function Sidebar({ currentPage, onNavigate, developerMode }: SidebarProps): JSX.Element {
   return (
     <aside className="w-72 bg-sidebar border-r border-sidebar-border flex flex-col h-screen">
       {/* Logo */}

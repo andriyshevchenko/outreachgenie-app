@@ -38,7 +38,7 @@ const suggestions = [
   },
 ];
 
-export function SuggestedActions({ onSelect }: SuggestedActionsProps) {
+export function SuggestedActions({ onSelect }: SuggestedActionsProps): JSX.Element {
   return (
     <div className="grid grid-cols-2 gap-3">
       {suggestions.map((suggestion) => (

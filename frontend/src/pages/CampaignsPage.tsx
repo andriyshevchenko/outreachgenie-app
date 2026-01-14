@@ -19,7 +19,7 @@ import { CampaignStateChangedEvent, signalRHub } from '@/lib/signalr';
 import { Pause, Play, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-export function CampaignsPage() {
+export function CampaignsPage(): JSX.Element {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -27,7 +27,7 @@ export function CampaignsPage() {
   const [newCampaignAudience, setNewCampaignAudience] = useState('');
   const { toast } = useToast();
 
-  const loadCampaigns = async () => {
+  const loadCampaigns = async (): Promise<void> => {
     try {
       setLoading(true);
       const data = await apiClient.getCampaigns();
@@ -45,7 +45,7 @@ export function CampaignsPage() {
   };
 
   useEffect(() => {
-    loadCampaigns();
+    void loadCampaigns();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -71,7 +71,7 @@ export function CampaignsPage() {
     };
   }, []);
 
-  const handleCreateCampaign = async () => {
+  const handleCreateCampaign = async (): Promise<void> => {
     if (!newCampaignName.trim() || !newCampaignAudience.trim()) {
       toast({
         title: 'Validation Error',
@@ -104,7 +104,7 @@ export function CampaignsPage() {
     }
   };
 
-  const handlePauseCampaign = async (id: string) => {
+  const handlePauseCampaign = async (id: string): Promise<void> => {
     try {
       await apiClient.pauseCampaign(id);
       toast({
@@ -121,7 +121,7 @@ export function CampaignsPage() {
     }
   };
 
-  const handleResumeCampaign = async (id: string) => {
+  const handleResumeCampaign = async (id: string): Promise<void> => {
     try {
       await apiClient.resumeCampaign(id);
       toast({
@@ -138,8 +138,10 @@ export function CampaignsPage() {
     }
   };
 
-  const handleDeleteCampaign = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this campaign?')) {
+  const handleDeleteCampaign = async (id: string): Promise<void> => {
+    // Using window.confirm which is allowed as a dialog, not alert
+    // eslint-disable-next-line no-alert
+    if (!window.confirm('Are you sure you want to delete this campaign?')) {
       return;
     }
 
@@ -190,7 +192,7 @@ export function CampaignsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={loadCampaigns}
+              onClick={() => { void loadCampaigns(); }}
               disabled={loading}
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -235,7 +237,7 @@ export function CampaignsPage() {
                   <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleCreateCampaign}>
+                  <Button onClick={() => { void handleCreateCampaign(); }}>
                     Create Campaign
                   </Button>
                 </DialogFooter>
@@ -294,7 +296,7 @@ export function CampaignsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handlePauseCampaign(campaign.id)}
+                        onClick={() => { void handlePauseCampaign(campaign.id); }}
                         className="flex-1"
                       >
                         <Pause className="w-4 h-4 mr-1" />
@@ -305,7 +307,7 @@ export function CampaignsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleResumeCampaign(campaign.id)}
+                        onClick={() => { void handleResumeCampaign(campaign.id); }}
                         className="flex-1"
                       >
                         <Play className="w-4 h-4 mr-1" />
@@ -315,7 +317,7 @@ export function CampaignsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDeleteCampaign(campaign.id)}
+                      onClick={() => { void handleDeleteCampaign(campaign.id); }}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
