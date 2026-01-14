@@ -5,10 +5,16 @@
 
 const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) || 'http://localhost:5000';
 
-interface ApiError {
-    message: string;
+class ApiError extends Error {
     statusCode: number;
     details?: unknown;
+    
+    constructor(statusCode: number, message: string, details?: unknown) {
+        super(message);
+        this.name = 'ApiError';
+        this.statusCode = statusCode;
+        this.details = details;
+    }
 }
 
 class ApiClient {
