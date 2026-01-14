@@ -34,7 +34,8 @@ describe('SuggestedActions', () => {
     
     // All buttons should have icons (SVG elements from lucide-react)
     const buttons = screen.getAllByRole('button');
-    expect(buttons.length).toBe(6);
+    const EXPECTED_ACTION_COUNT = 6;
+    expect(buttons.length).toBe(EXPECTED_ACTION_COUNT);
     
     buttons.forEach(button => {
       const svg = button.querySelector('svg');

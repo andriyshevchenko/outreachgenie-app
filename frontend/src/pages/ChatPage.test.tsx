@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, no-magic-numbers */
 import * as api from '@/lib/api';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -23,8 +24,12 @@ vi.mock('@/hooks/use-toast', () => ({
 }));
 
 describe('ChatPage', () => {
+  let mockSendMessage: ReturnType<typeof vi.fn>;
+  
   beforeEach(() => {
     vi.clearAllMocks();
+    // Use spyOn to avoid unbound method issues
+    mockSendMessage = vi.spyOn(api.apiClient, 'sendMessage').mockImplementation(vi.fn());
   });
 
   it('should render empty chat interface', () => {
@@ -52,7 +57,7 @@ describe('ChatPage', () => {
       timestamp: '2026-01-11T15:00:00Z',
     };
     
-    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockResponse);
+    mockSendMessage.mockResolvedValueOnce(mockResponse);
     
     render(<ChatPage />);
     
@@ -65,7 +70,7 @@ describe('ChatPage', () => {
     });
     
     // API should be called
-    expect(api.apiClient.sendMessage).toHaveBeenCalledWith(
+    expect(mockSendMessage).toHaveBeenCalledWith(
       expect.stringContaining('prospects')
     );
     
@@ -82,7 +87,7 @@ describe('ChatPage', () => {
       resolvePromise = resolve;
     });
     
-    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockReturnValueOnce(promise);
+    mockSendMessage.mockReturnValueOnce(promise);
     
     render(<ChatPage />);
     
@@ -98,11 +103,13 @@ describe('ChatPage', () => {
     });
     
     // Resolve the promise
-    resolvePromise!({
-      messageId: '123',
-      content: 'Response',
-      timestamp: '2026-01-11T15:00:00Z',
-    });
+    if (resolvePromise) {
+      resolvePromise({
+        messageId: '123',
+        content: 'Response',
+        timestamp: '2026-01-11T15:00:00Z',
+      });
+    }
     
     // Typing indicator should disappear
     await waitFor(() => {
@@ -112,12 +119,9 @@ describe('ChatPage', () => {
 
   it('should display error toast when API call fails', async () => {
     const user = userEvent.setup();
-    const mockError = {
-      statusCode: 500,
-      message: 'Internal Server Error',
-    };
+    const mockError: InstanceType<typeof api.ApiError> = new api.ApiError(500, 'Internal Server Error');
     
-    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockRejectedValueOnce(mockError);
+    mockSendMessage.mockRejectedValueOnce(mockError);
     
     render(<ChatPage />);
     
@@ -143,12 +147,9 @@ describe('ChatPage', () => {
 
   it('should handle network errors with connection message', async () => {
     const user = userEvent.setup();
-    const mockError = {
-      statusCode: 0,
-      message: 'Network failure',
-    };
+    const mockError: InstanceType<typeof api.ApiError> = new api.ApiError(0, 'Network failure');
     
-    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockRejectedValueOnce(mockError);
+    mockSendMessage.mockRejectedValueOnce(mockError);
     
     render(<ChatPage />);
     
@@ -173,7 +174,7 @@ describe('ChatPage', () => {
       timestamp: '2026-01-11T15:00:00Z',
     };
     
-    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockResponse);
+    mockSendMessage.mockResolvedValueOnce(mockResponse);
     
     render(<ChatPage />);
     
@@ -182,7 +183,7 @@ describe('ChatPage', () => {
     
     // Verify message was sent via Enter key
     await waitFor(() => {
-      expect(api.apiClient.sendMessage).toHaveBeenCalledWith(expect.stringContaining('Hello'));
+      expect(mockSendMessage).toHaveBeenCalledWith(expect.stringContaining('Hello'));
     });
   });
 
@@ -194,7 +195,7 @@ describe('ChatPage', () => {
       timestamp: '2026-01-11T15:00:00Z',
     };
     
-    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockResponse);
+    mockSendMessage.mockResolvedValueOnce(mockResponse);
     
     render(<ChatPage />);
     
@@ -203,7 +204,7 @@ describe('ChatPage', () => {
     
     // Message should be sent
     await waitFor(() => {
-      expect(api.apiClient.sendMessage).toHaveBeenCalled();
+      expect(mockSendMessage).toHaveBeenCalled();
     });
   });
 
@@ -215,7 +216,7 @@ describe('ChatPage', () => {
       timestamp: '2026-01-11T15:00:00Z',
     };
     
-    (api.apiClient.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockResponse);
+    mockSendMessage.mockResolvedValueOnce(mockResponse);
     
     const scrollIntoViewMock = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoViewMock;

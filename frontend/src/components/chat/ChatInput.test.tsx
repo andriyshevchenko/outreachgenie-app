@@ -51,10 +51,10 @@ describe('ChatInput', () => {
     
     render(<ChatInput onSend={onSend} disabled={false} />);
     
-    const input = screen.getByPlaceholderText(/ask the agent/i) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/ask the agent/i);
     await user.type(input, 'Another message{Enter}');
     
-    expect(input.value).toBe('');
+    expect(input).toHaveValue('');
   });
 
   it('should show send button', () => {
@@ -71,6 +71,7 @@ describe('ChatInput', () => {
     
     // Attachment button should be present
     const buttons = screen.getAllByRole('button');
-    expect(buttons.length).toBeGreaterThanOrEqual(2); // Send button + attachment button
+    const MINIMUM_BUTTON_COUNT = 2;
+    expect(buttons.length).toBeGreaterThanOrEqual(MINIMUM_BUTTON_COUNT); // Send button + attachment button
   });
 });

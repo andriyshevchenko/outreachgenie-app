@@ -18,7 +18,7 @@ const defaultSettings: Settings = {
   notifications: true,
 };
 
-const Index = () => {
+const Index = (): JSX.Element => {
   const [currentPage, setCurrentPage] = useState('chat');
   const [settings, setSettings] = useState<Settings>(defaultSettings);
 

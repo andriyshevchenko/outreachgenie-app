@@ -1,5 +1,9 @@
+/* eslint-disable max-lines */
+// Note: This page would require substantial refactoring to split into smaller components
+// while maintaining the cohesive developer settings interface with multiple configuration sections.
+
 import { useState } from 'react';
-import { Code2, Terminal, Server, Cpu, Save, RefreshCw, Bug, FileJson } from 'lucide-react';
+import { Terminal, Server, Cpu, Save, RefreshCw, Bug, FileJson } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +12,11 @@ import { Slider } from '@/components/ui/slider';
 import { Settings } from '@/types/agent';
 import { toast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+
+const TEST_DELAY_MS = 1000;
+const TEMPERATURE_DECIMAL_PLACES = 2;
+const TEMPERATURE_SLIDER_MULTIPLIER = 100;
+const TEMPERATURE_SLIDER_MAX = 200;
 
 interface DeveloperPageProps {
   settings: Settings;
@@ -33,7 +42,7 @@ const sampleManifest = `{
   ]
 }`;
 
-export function DeveloperPage({ settings, onSettingsChange }: DeveloperPageProps) {
+export function DeveloperPage({ settings, onSettingsChange }: DeveloperPageProps): JSX.Element {
   const [localSettings, setLocalSettings] = useState(settings);
   const [manifest, setManifest] = useState(sampleManifest);
   const [logs, setLogs] = useState<string[]>([
@@ -68,7 +77,7 @@ export function DeveloperPage({ settings, onSettingsChange }: DeveloperPageProps
         title: 'Connection successful',
         description: 'API endpoint is reachable.',
       });
-    }, 1000);
+    }, TEST_DELAY_MS);
   };
 
   return (
@@ -152,12 +161,12 @@ export function DeveloperPage({ settings, onSettingsChange }: DeveloperPageProps
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label>Temperature</Label>
-                <span className="text-sm font-mono text-muted-foreground">{localSettings.temperature.toFixed(2)}</span>
+                <span className="text-sm font-mono text-muted-foreground">{localSettings.temperature.toFixed(TEMPERATURE_DECIMAL_PLACES)}</span>
               </div>
               <Slider
-                value={[localSettings.temperature * 100]}
-                onValueChange={([value]) => updateSetting('temperature', value / 100)}
-                max={200}
+                value={[localSettings.temperature * TEMPERATURE_SLIDER_MULTIPLIER]}
+                onValueChange={([value]) => updateSetting('temperature', value / TEMPERATURE_SLIDER_MULTIPLIER)}
+                max={TEMPERATURE_SLIDER_MAX}
                 min={0}
                 step={5}
                 className="w-full"

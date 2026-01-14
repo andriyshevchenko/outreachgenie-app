@@ -29,12 +29,12 @@
 ## Architecture & Structure [A]
 
 - **[A1-H]** The DDD paradigm must be respected.
-- **[A2-H]** Favor "fail fast" over "fail safe": throw exceptions as early as possible.
+- **[A2-H]** Favor "fail fast" over "fail safe".
 
 ## Method Requirements [M]
 
-- **[M1-C]** Methods must never return `null`; use `Option<T>`-like patterns or explicit objects.
-- **[M2-C]** `null` must not be passed as an argument.
+- **[M1-C]** Methods must never return null (use Option-like patterns).
+- **[M2-C]** null must not be passed as an argument.
 - **[M3-C]** Type checks (`is`, `as`) and casting are strictly prohibited.
 - **[M4-C]** Reflection on object internals is strictly prohibited.
 - **[M5-H]** Methods must be declared in interfaces and implemented in classes.

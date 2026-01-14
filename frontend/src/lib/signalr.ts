@@ -5,7 +5,7 @@
 
 import * as signalR from '@microsoft/signalr';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:5000';
 
 export interface TaskStatusChangedEvent {
     taskId: string;
@@ -33,16 +33,23 @@ export interface ArtifactCreatedEvent {
     timestamp: string;
 }
 
+const RECONNECT_BASE_DELAY_MS = 1000;
+const RECONNECT_EXPONENT_BASE = 2;
+const MAX_RECONNECT_DELAY_MS = 30000;
+const MAX_RECONNECT_ATTEMPTS = 5;
+
 class SignalRHub {
     private connection: signalR.HubConnection | null = null;
     private reconnectAttempts = 0;
-    private maxReconnectAttempts = 5;
+    private readonly maxReconnectAttempts = MAX_RECONNECT_ATTEMPTS;
 
     /**
      * Connect to SignalR hub
      */
     async connect(): Promise<void> {
         if (this.connection?.state === signalR.HubConnectionState.Connected) {
+            // Info level logging is allowed
+            // eslint-disable-next-line no-console
             console.log('SignalR already connected');
             return;
         }
@@ -55,7 +62,7 @@ class SignalRHub {
                 nextRetryDelayInMilliseconds: () => {
                     if (this.reconnectAttempts < this.maxReconnectAttempts) {
                         this.reconnectAttempts++;
-                        return Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+                        return Math.min(RECONNECT_BASE_DELAY_MS * Math.pow(RECONNECT_EXPONENT_BASE, this.reconnectAttempts), MAX_RECONNECT_DELAY_MS);
                     }
                     return null; // Stop reconnecting
                 },
@@ -64,10 +71,12 @@ class SignalRHub {
             .build();
 
         this.connection.onreconnecting(() => {
-            console.log('SignalR reconnecting...');
+            // Connection is reconnecting - allowed console method
+            console.warn('SignalR reconnecting...');
         });
 
         this.connection.onreconnected(() => {
+            // eslint-disable-next-line no-console
             console.log('SignalR reconnected');
             this.reconnectAttempts = 0;
         });
@@ -78,7 +87,6 @@ class SignalRHub {
 
         try {
             await this.connection.start();
-            console.log('SignalR connected successfully');
             this.reconnectAttempts = 0;
         } catch (error) {
             console.error('SignalR connection failed', error);
@@ -93,7 +101,6 @@ class SignalRHub {
         if (this.connection) {
             await this.connection.stop();
             this.connection = null;
-            console.log('SignalR disconnected');
         }
     }
 
