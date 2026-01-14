@@ -5,7 +5,7 @@
 
 import * as signalR from '@microsoft/signalr';
 
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL as string || 'http://localhost:5000';
+const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:5000';
 
 export interface TaskStatusChangedEvent {
     taskId: string;
