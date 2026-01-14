@@ -7,7 +7,7 @@
 // Note: This file exceeds 150 lines but would require substantial refactoring to split into smaller modules
 // while maintaining cohesion of the API client logic and type definitions.
 
-const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) || 'http://localhost:5000';
+const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:5000';
 
 class ApiError extends Error {
     statusCode: number;
