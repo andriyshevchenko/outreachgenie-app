@@ -123,7 +123,11 @@ FormDescription.displayName = "FormDescription";
 const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({ className, children, ...props }, ref) => {
     const { error, formMessageId } = useFormField();
-    const errorMessage = error && typeof error === 'object' && 'message' in error ? String(error.message) : undefined;
+    let errorMessage: string | undefined;
+    if (error && typeof error === 'object' && 'message' in error) {
+      const msg = error.message;
+      errorMessage = typeof msg === 'string' ? msg : String(msg);
+    }
     const body = errorMessage ?? children;
 
     if (!body) {
