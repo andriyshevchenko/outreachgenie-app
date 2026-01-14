@@ -6,10 +6,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatPage } from './ChatPage';
 
 // Mock the API client
-const mockSendMessage = vi.fn();
 vi.mock('@/lib/api', () => ({
   apiClient: {
-    sendMessage: mockSendMessage,
+    sendMessage: vi.fn(),
   },
   ApiError: class ApiError extends Error {
     constructor(public statusCode: number, message: string, public details?: unknown) {
@@ -25,6 +24,7 @@ vi.mock('@/hooks/use-toast', () => ({
 }));
 
 describe('ChatPage', () => {
+  const mockSendMessage = vi.mocked(api.apiClient.sendMessage);
   beforeEach(() => {
     vi.clearAllMocks();
   });
