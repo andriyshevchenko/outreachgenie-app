@@ -38,8 +38,7 @@ describe('ApiClient', () => {
                 headers: new Headers({ 'content-type': 'text/plain' }),
             });
 
-            const result = await apiClient['request']('/api/test');
-            expect(result).toEqual({});
+            await expect(apiClient['request']('/api/test')).rejects.toThrow('Expected JSON response but received text/plain');
         });
 
         it('should throw ApiError on HTTP error', async () => {
