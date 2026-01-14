@@ -6,7 +6,9 @@ interface ChatMessageProps {
   message: Message;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+const BYTES_PER_KB = 1024;
+
+export function ChatMessage({ message }: ChatMessageProps): JSX.Element {
   const isUser = message.role === 'user';
 
   return (
@@ -43,7 +45,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-foreground">{file.name}</span>
                 <span className="text-muted-foreground text-xs">
-                  ({(file.size / 1024).toFixed(1)}KB)
+                  ({(file.size / BYTES_PER_KB).toFixed(1)}KB)
                 </span>
               </div>
             ))}

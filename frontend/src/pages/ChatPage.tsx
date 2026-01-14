@@ -9,7 +9,7 @@ import { FileAttachment, Message } from '@/types/agent';
 import { Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-export function ChatPage() {
+export function ChatPage(): JSX.Element {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -95,7 +95,7 @@ export function ChatPage() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    sendMessageToBackend(content);
+    void sendMessageToBackend(content);
   };
 
   const handleSuggestion = (prompt: string) => {

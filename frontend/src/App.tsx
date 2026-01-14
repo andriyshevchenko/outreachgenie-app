@@ -10,10 +10,10 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => {
+const App = (): JSX.Element => {
   // Connect to SignalR hub on app mount
   useEffect(() => {
-    const connect = async () => {
+    const connect = async (): Promise<void> => {
       try {
         await signalRHub.connect();
       } catch (error) {
@@ -21,11 +21,11 @@ const App = () => {
       }
     };
 
-    connect();
+    void connect();
 
     // Cleanup on unmount
     return () => {
-      signalRHub.disconnect();
+      void signalRHub.disconnect();
     };
   }, []);
 
