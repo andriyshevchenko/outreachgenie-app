@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings as SettingsIcon, Bell, Shield, User, Code2, Linkedin, Save } from 'lucide-react';
+import { Bell, Shield, User, Code2, Linkedin, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ interface SettingsPageProps {
   onSettingsChange: (settings: Settings) => void;
 }
 
-export function SettingsPage({ settings, onSettingsChange }: SettingsPageProps) {
+export function SettingsPage({ settings, onSettingsChange }: SettingsPageProps): JSX.Element {
   const [localSettings, setLocalSettings] = useState(settings);
 
   const handleSave = () => {
