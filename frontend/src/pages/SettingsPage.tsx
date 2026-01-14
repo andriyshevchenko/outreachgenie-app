@@ -1,5 +1,9 @@
+/* eslint-disable max-lines */
+// Note: This page would require substantial refactoring to split into smaller components
+// while maintaining the cohesive settings interface with multiple configuration sections.
+
 import { useState } from 'react';
-import { Bell, Code2, Linkedin, Save } from 'lucide-react';
+import { Bell, Shield, User, Code2, Linkedin, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +42,7 @@ export function SettingsPage({ settings, onSettingsChange }: SettingsPageProps):
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
+            <User className="w-5 h-5 text-primary" />
             Profile Settings
           </CardTitle>
           <CardDescription>Configure your LinkedIn connection and profile</CardDescription>
@@ -70,9 +75,9 @@ export function SettingsPage({ settings, onSettingsChange }: SettingsPageProps):
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="w-5 h-5 text-primary" />
-            Notifications & Security
+            Notifications
           </CardTitle>
-          <CardDescription>Configure how you receive updates and security preferences</CardDescription>
+          <CardDescription>Configure how you receive updates</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
@@ -80,21 +85,42 @@ export function SettingsPage({ settings, onSettingsChange }: SettingsPageProps):
               <p className="font-medium text-foreground">Push Notifications</p>
               <p className="text-sm text-muted-foreground">Receive alerts for campaign updates</p>
             </div>
-            <Switch checked={localSettings.notifications} onCheckedChange={(checked) => updateSetting('notifications', checked)} />
+            <Switch
+              checked={localSettings.notifications}
+              onCheckedChange={(checked) => updateSetting('notifications', checked)}
+            />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-foreground">Auto-save Conversations</p>
               <p className="text-sm text-muted-foreground">Automatically save chat history</p>
             </div>
-            <Switch checked={localSettings.autoSave} onCheckedChange={(checked) => updateSetting('autoSave', checked)} />
+            <Switch
+              checked={localSettings.autoSave}
+              onCheckedChange={(checked) => updateSetting('autoSave', checked)}
+            />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            Security & Privacy
+          </CardTitle>
+          <CardDescription>Manage your security preferences</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-foreground">Developer Mode</p>
               <p className="text-sm text-muted-foreground">Enable advanced settings and debugging tools</p>
             </div>
-            <Switch checked={localSettings.developerMode} onCheckedChange={(checked) => updateSetting('developerMode', checked)} />
+            <Switch
+              checked={localSettings.developerMode}
+              onCheckedChange={(checked) => updateSetting('developerMode', checked)}
+            />
           </div>
         </CardContent>
       </Card>

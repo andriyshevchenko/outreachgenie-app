@@ -29,23 +29,20 @@ class ApiClient {
     }
 
     private async handleErrorResponse(response: Response): Promise<never> {
-        const error: ApiError = {
-            message: response.statusText,
-            statusCode: response.status,
-        };
+        let message = response.statusText;
+        let details: unknown;
 
         try {
             const errorData: unknown = await response.json();
-            error.details = errorData;
+            details = errorData;
             if (errorData && typeof errorData === 'object' && 'message' in errorData && typeof errorData.message === 'string') {
-                error.message = errorData.message || error.message;
+                message = errorData.message || message;
             }
         } catch {
             // Response body might not be JSON
         }
 
-        const apiError = new ApiError(error.statusCode, error.message, error.details);
-        throw apiError;
+        throw new ApiError(response.status, message, details);
     }
 
     private async parseResponse<T>(response: Response): Promise<T> {
