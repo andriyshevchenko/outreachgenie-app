@@ -36,11 +36,12 @@ export interface ArtifactCreatedEvent {
 const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_EXPONENT_BASE = 2;
 const MAX_RECONNECT_DELAY_MS = 30000;
+const MAX_RECONNECT_ATTEMPTS = 5;
 
 class SignalRHub {
     private connection: signalR.HubConnection | null = null;
     private reconnectAttempts = 0;
-    private readonly maxReconnectAttempts = 5;
+    private readonly maxReconnectAttempts = MAX_RECONNECT_ATTEMPTS;
 
     /**
      * Connect to SignalR hub

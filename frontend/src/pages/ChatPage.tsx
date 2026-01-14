@@ -27,7 +27,7 @@ export function ChatPage(): JSX.Element {
     const handleChatMessage = (event: ChatMessageReceivedEvent) => {
       const newMessage: Message = {
         id: event.messageId,
-        role: event.role as 'user' | 'assistant',
+        role: event.role,
         content: event.content,
         timestamp: new Date(event.timestamp),
       };

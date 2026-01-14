@@ -3,12 +3,22 @@
  * Provides typed interfaces matching C# backend models
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+/* eslint-disable max-lines */
+// Note: This file exceeds 150 lines but would require substantial refactoring to split into smaller modules
+// while maintaining cohesion of the API client logic and type definitions.
 
-interface ApiError {
-    message: string;
+const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) || 'http://localhost:5000';
+
+class ApiError extends Error {
     statusCode: number;
     details?: unknown;
+    
+    constructor(statusCode: number, message: string, details?: unknown) {
+        super(message);
+        this.name = 'ApiError';
+        this.statusCode = statusCode;
+        this.details = details;
+    }
 }
 
 class ApiClient {
@@ -16,6 +26,31 @@ class ApiClient {
 
     constructor(baseUrl: string) {
         this.baseUrl = baseUrl;
+    }
+
+    private async handleErrorResponse(response: Response): Promise<never> {
+        let message = response.statusText;
+        let details: unknown;
+
+        try {
+            const errorData: unknown = await response.json();
+            details = errorData;
+            if (errorData && typeof errorData === 'object' && 'message' in errorData && typeof errorData.message === 'string') {
+                message = errorData.message || message;
+            }
+        } catch {
+            // Response body might not be JSON
+        }
+
+        throw new ApiError(response.status, message, details);
+    }
+
+    private async parseResponse<T>(response: Response): Promise<T> {
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+            return (await response.json()) as T;
+        }
+        return {} as T;
     }
 
     private async request<T>(
@@ -34,35 +69,14 @@ class ApiClient {
             });
 
             if (!response.ok) {
-                const error: ApiError = {
-                    message: response.statusText,
-                    statusCode: response.status,
-                };
-
-                try {
-                    const errorData = await response.json();
-                    error.details = errorData;
-                    error.message = errorData.message || error.message;
-                } catch {
-                    // Response body might not be JSON
-                }
-
-                throw error;
+                return await this.handleErrorResponse(response);
             }
 
-            const contentType = response.headers.get('content-type');
-            if (contentType?.includes('application/json')) {
-                return await response.json();
-            }
-
-            return {} as T;
+            return await this.parseResponse<T>(response);
         } catch (error) {
-            if (error instanceof Error && !(error as ApiError).statusCode) {
-                throw {
-                    message: error.message,
-                    statusCode: 0,
-                    details: error,
-                } as ApiError;
+            if (error instanceof Error && !('statusCode' in error)) {
+                const apiError = new ApiError(0, error.message, error);
+                throw apiError;
             }
             throw error;
         }

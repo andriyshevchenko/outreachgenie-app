@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, complexity */
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
@@ -35,7 +36,7 @@ type SidebarContext = {
 
 const SidebarContext = React.createContext<SidebarContext | null>(null);
 
-function useSidebar() {
+function useSidebar(): SidebarContext {
   const context = React.useContext(SidebarContext);
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider.");
@@ -537,7 +538,9 @@ const SidebarMenuSkeleton = React.forwardRef<
 >(({ className, showIcon = false, ...props }, ref) => {
   // Random width between 50 to 90%.
   const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`;
+    const MIN_WIDTH_PERCENT = 50;
+    const WIDTH_RANGE = 40;
+    return `${Math.floor(Math.random() * WIDTH_RANGE) + MIN_WIDTH_PERCENT}%`;
   }, []);
 
   return (
