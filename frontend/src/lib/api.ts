@@ -50,7 +50,7 @@ class ApiClient {
         if (contentType?.includes('application/json')) {
             return (await response.json()) as T;
         }
-        return {} as T;
+        throw new Error(`Expected JSON response but received ${contentType ?? 'no content-type'}`);
     }
 
     private async request<T>(

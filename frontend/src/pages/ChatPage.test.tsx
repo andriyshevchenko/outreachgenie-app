@@ -24,9 +24,12 @@ vi.mock('@/hooks/use-toast', () => ({
 }));
 
 describe('ChatPage', () => {
-  const mockSendMessage = vi.mocked(api.apiClient.sendMessage);
+  let mockSendMessage: ReturnType<typeof vi.fn>;
+  
   beforeEach(() => {
     vi.clearAllMocks();
+    // Use spyOn to avoid unbound method issues
+    mockSendMessage = vi.spyOn(api.apiClient, 'sendMessage').mockImplementation(vi.fn());
   });
 
   it('should render empty chat interface', () => {

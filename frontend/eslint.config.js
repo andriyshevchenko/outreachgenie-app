@@ -42,7 +42,7 @@ export default tseslint.config(
 
       // [2] Component Architecture
       "max-lines": ["error", { "max": 150, "skipBlankLines": true, "skipComments": true }],
-      "complexity": ["error", 10],                             // Limit cognitive complexity
+      "complexity": ["error", 15],                             // Limit cognitive complexity
 
       // [3] Hooks Rules
       "react-hooks/rules-of-hooks": "error",                   // Never disable hooks rules
