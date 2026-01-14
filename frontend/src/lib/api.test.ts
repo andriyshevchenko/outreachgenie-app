@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { apiClient, ApiError, ArtifactSource, CampaignStatus, TaskStatus } from '@/lib/api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, complexity, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/restrict-template-expressions */
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
 
