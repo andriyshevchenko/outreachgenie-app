@@ -1,6 +1,3 @@
 <Solution>
   <Project Path="OutreachGenie.Api/OutreachGenie.Api.csproj" />
-  <Project Path="OutreachGenie.Application/OutreachGenie.Application.csproj" />
-  <Project Path="OutreachGenie.Core/OutreachGenie.Core.csproj" />
-  <Project Path="OutreachGenie.Infrastructure/OutreachGenie.Infrastructure.csproj" />
 </Solution>

@@ -1,472 +1,316 @@
-Below is a complete, production-ready set of user stories for the LinkedIn Outreach Copilot system you described.  
-They are written so you can:
+# Agentic Marketing & Sales Copilot
 
-map them directly to backlog items
+## Product & Requirements Specification (User Stories)
 
-derive acceptance criteria
+---
 
-implement incrementally
+## 1. Purpose and Scope
 
-validate scope control
+The system is a **desktop-based agentic copilot** for marketing and sales workflows (e.g., LinkedIn outreach campaigns). It is designed to execute **long-running, multi-step campaigns** with strict procedural guarantees, durable state, and full auditability.
 
-They deliberately avoid architectural language unless necessary.
+Large Language Models (LLMs) are used strictly as **reasoning and generation components**. They are **not** the system of record and are not trusted to remember obligations, enforce invariants, or maintain state.
 
-\---
+The system must tolerate:
 
-USER STORIES
+* Context truncation
+* Conversation summarization
+* Model hallucination
+* Model non-determinism
 
-LinkedIn Outreach Copilot (Desktop, MCP-Driven)
+Without violating campaign correctness.
 
-\---
+---
 
-EPIC 1 — Campaign Lifecycle
+## 2. Target Users
 
-US-1.1 Create campaign
+### 2.1 Marketing Operator
 
-As a user  
-I want to create a new LinkedIn outreach campaign  
-So that all tasks, leads, logs, and artifacts are isolated per campaign.
+A user running outreach or lead-generation campaigns who expects:
 
-Acceptance criteria
+* Predictable execution
+* Visibility into agent actions
+* Recoverability after interruptions
 
-Campaign has a unique ID
+### 2.2 Power User / Growth Engineer
 
-Campaign stores name and user goal
+A technically proficient user who expects:
 
-Campaign starts in active status
+* Deterministic workflows
+* Full observability
+* Strict guarantees that no critical steps are skipped
 
-Initial system tasks are created automatically
+### 2.3 Compliance-Oriented User
 
-\---
+A user who requires:
 
-US-1.2 Resume existing campaign
+* Complete audit trails
+* Reconstructable system state
+* Verifiable logs of all agent actions
 
-As a user  
-I want to reopen an existing campaign  
-So that I can continue work after restarting the application.
+---
 
-Acceptance criteria
+## 3. Core Design Principles
 
-Campaign state is restored from database
+1. **LLM is fallible**: The system assumes the LLM will forget, skip steps, or produce invalid output.
+2. **State is externalized**: All progress, memory, and artifacts live outside the model.
+3. **Procedural enforcement**: Critical steps cannot be skipped, even if the LLM attempts to.
+4. **Observability-first**: Every meaningful action is logged.
+5. **Recoverability**: Any campaign can be resumed from durable state.
 
-Completed tasks remain completed
+---
 
-No steps are re-executed automatically
+## 4. High-Level Capabilities
 
-\---
+### 4.1 Campaign Lifecycle Management
 
-US-1.3 Pause campaign
+**User Story**
 
-As a user  
-I want to pause a campaign  
-So that no automated steps run until I explicitly resume it.
+> As a user, I want to create and manage campaigns so that each campaign has isolated state, data, and history.
 
-Acceptance criteria
+**Acceptance Criteria**
 
-Campaign status changes to paused
+* Each campaign has a unique identifier
+* Campaigns can be paused, resumed, and restored
+* Campaign metadata persists across sessions
 
-No enforced tasks execute while paused
+---
 
-\---
+### 4.2 Task Planning and Enforcement
 
-EPIC 2 — Conversational Interface
+**User Story**
 
-US-2.1 Chat with agent
+> As a user, I want the agent to generate TODO items and strictly follow them so that no required step is skipped.
 
-As a user  
-I want to chat naturally with the agent  
-So that I can describe goals, preferences, and constraints.
+**Acceptance Criteria**
 
-Acceptance criteria
+* Tasks are generated as explicit, persistent artifacts
+* Tasks have states (e.g., pending, completed, blocked)
+* Progress is derived from task completion, not from model output
+* The agent cannot advance without satisfying required tasks
 
-Messages appear in chat UI
+---
 
-Chat is persisted
+### 4.3 Lead Discovery
 
-Chat does not directly execute actions
+**User Story**
 
-\---
+> As a user, I want the agent to search for leads so that I can build targeted outreach lists.
 
-US-2.2 Agent explains actions
+**Acceptance Criteria**
 
-As a user  
-I want the agent to explain what it just did and why  
-So that I understand campaign progress.
+* Lead discovery actions are explicitly logged
+* Lead sources are recorded
+* Duplicate leads are detected and handled
 
-Acceptance criteria
+---
 
-Explanations reflect actual system actions
+### 4.4 Lead Scoring and Prioritization
 
-Agent does not claim actions that did not occur
+**User Story**
 
-\---
+> As a user, I want the agent to apply heuristic scoring to leads so that higher-value leads are prioritized.
 
-US-2.3 Agent asks clarifying questions
+**Acceptance Criteria**
 
-As a user  
-I want the agent to ask questions when information is missing  
-So that strategies and heuristics are better aligned with my intent.
+* Scoring criteria are explicit and reproducible
+* Scores are stored with timestamped rationale
+* Score changes are tracked over time
 
-Acceptance criteria
+---
 
-Questions do not mutate campaign state
+### 4.5 Persistent Data Storage
 
-Answers influence future planning only
+**User Story**
 
-\---
+> As a user, I want all leads and campaign artifacts stored in a database so that no data is lost.
 
-EPIC 3 — Task / TODO Management
+**Acceptance Criteria**
 
-US-3.1 Generate TODOs
+* Leads persist independently of the agent process
+* Database reflects the current campaign state in near real time
+* Data integrity is preserved across restarts
 
-As a user  
-I want the agent to generate a list of TODO items  
-So that I can see the planned steps for the campaign.
+---
 
-Acceptance criteria
+### 4.6 Artifact Management
 
-Tasks are stored in the database
+**User Story**
 
-Tasks have type (ephemeral or enforced)
+> As a user, I want the agent to store generated artifacts (e.g., Excel files, context documents) so that I can review and reuse them.
 
-Tasks are visible in UI
+**Acceptance Criteria**
 
-\---
+* Artifacts are versioned
+* Artifact creation and deletion are logged
+* Temporary files are cleaned up deterministically
 
-US-3.2 Dynamically add TODOs
+---
 
-As a user  
-I want the agent to add or adjust TODOs as the campaign evolves  
-So that the plan adapts to new input.
+### 4.7 Event Logging
 
-Acceptance criteria
+**User Story**
 
-New tasks can be added at any time
+> As a user, I want every data mutation recorded so that the system can be restored to an earlier state.
 
-Existing tasks can be cancelled
+**Acceptance Criteria**
 
-Task history is preserved
+* Inserts, updates, and deletes are logged
+* Logs are append-only
+* System state can be reconstructed from logs
 
-\---
+---
 
-US-3.3 Strict task execution
+### 4.8 Audit Logging
 
-As a user  
-I want the system to strictly follow enforced TODOs  
-So that important steps are never skipped.
+**User Story**
 
-Acceptance criteria
+> As a user, I want a detailed audit log so that I can inspect what the agent actually did.
 
-Only one enforced task runs at a time
+**Acceptance Criteria**
 
-Enforced tasks cannot be marked complete by the LLM
+* Every tool call is logged
+* Every browser interaction is logged
+* Every file operation is logged
+* Logs are timestamped and ordered
 
-Failed tasks remain pending
+---
 
-\---
+## 5. Agent Behavior Model
 
-EPIC 4 — Audit & Event Logging
+### 5.1 Algorithm Execution
 
-US-4.1 Audit every action
+**User Story**
 
-As a user  
-I want every system action to be audit logged  
-So that I can trace what happened and when.
+> As a user, I want the agent to follow a predefined algorithm so that campaign execution is predictable.
 
-Acceptance criteria
+**Acceptance Criteria**
 
-All MCP calls produce audit records
+* Algorithm steps are explicit and externally enforced
+* The agent cannot skip mandatory steps
+* Deviations are detected and blocked
 
-Logs include timestamps and metadata
+---
 
-Logs are immutable
+### 5.2 Plan Mode vs Execution Mode
 
-\---
+**User Story**
 
-US-4.2 Event log DB changes
+> As a user, I want the agent to separate planning from execution so that plans can be inspected before actions occur.
 
-As a user  
-I want every DB insert, update, and delete logged  
-So that the database can be reconstructed if needed.
+**Acceptance Criteria**
 
-Acceptance criteria
+* Plans exist as durable documents
+* Execution references the plan, not conversation history
+* Plan changes are versioned
 
-Before/after state recorded
+---
 
-Event log written in same transaction
+## 6. Memory and Context Management
 
-Event log cannot be skipped
+### 6.1 Durable Memory
 
-\---
+**User Story**
 
-EPIC 5 — Environment & Setup
+> As a user, I want campaign memory to persist independently of the conversation so that context loss does not break execution.
 
-US-5.1 Validate environment
+**Acceptance Criteria**
 
-As a user  
-I want the system to validate environment variables and directories  
-So that campaigns do not fail mid-execution.
+* Campaign context is stored outside the LLM
+* Memory survives summarization or truncation
+* State restoration does not depend on chat history
 
-Acceptance criteria
+---
 
-Missing env vars are detected
+### 6.2 Conversational Memory
 
-Invalid directories block execution
+**User Story**
 
-Errors are reported clearly
+> As a user, I want conversational context to assist reasoning without becoming a source of truth.
 
-\---
+**Acceptance Criteria**
 
-US-5.2 Provision campaign database
+* Conversation summaries are treated as advisory
+* Authoritative state is always external
 
-As a user  
-I want the system to provision a campaign database automatically  
-So that I do not need manual setup.
+---
 
-Acceptance criteria
+## 7. Failure Handling and Recovery
 
-Database is created via Docker
+**User Story**
 
-Schema is applied successfully
+> As a user, I want the system to recover from crashes or interruptions without losing progress.
 
-Connection is validated
+**Acceptance Criteria**
 
-\---
+* Campaigns can resume mid-execution
+* Incomplete steps are detectable
+* No silent failure modes exist
 
-EPIC 6 — LinkedIn Automation
+---
 
-US-6.1 Authenticate LinkedIn session
+## 8. Desktop Application Context
 
-As a user  
-I want to authenticate LinkedIn manually in a browser session  
-So that automation complies with LinkedIn terms.
+**User Story**
 
-Acceptance criteria
+> As a user, I want this to run as a desktop application with a browser-based UI so that I have local control and visibility.
 
-User controls authentication
+**Acceptance Criteria**
 
-Session is reused by Playwright
+* UI reflects real campaign state
+* Agent actions are observable in near real time
+* Local execution does not reduce auditability
 
-Authentication is logged
+---
 
-\---
+## 9. Problem Statement: GitHub Copilot Experience
 
-US-6.2 Search for leads
+### 9.1 Observed Failures
 
-As a user  
-I want the system to search LinkedIn for leads  
-So that I can discover relevant prospects.
+**User Story**
 
-Acceptance criteria
+> As a developer, I tried to implement this system using prompt-based agents in GitHub Copilot but encountered systemic limitations.
 
-Search criteria derived from strategy
+**Documented Issues**
 
-Browser actions are logged
+* The agent failed to consistently follow TODO lists
+* Critical steps (logging, persistence) were skipped
+* Conversation summarization caused state loss
+* Token usage increased rapidly for long campaigns
+* Model behavior was non-deterministic
 
-Results are captured reliably
+---
 
-\---
+### 9.2 Conclusion
 
-US-6.3 Extract lead profiles
+**User Story**
 
-As a user  
-I want lead profile data extracted  
-So that it can be scored and stored.
+> As a developer, I concluded that prompt-only agent design is insufficient for this class of system.
 
-Acceptance criteria
+**Outcome**
 
-Full name and LinkedIn URL captured
+* LLMs cannot be trusted as workflow engines
+* Enforcement must live in deterministic system layers
+* The agent must be treated as an unreliable collaborator, not an executor
 
-Raw profile data persisted
+---
 
-Extraction errors are logged
+## 10. Non-Goals
 
-\---
+* No assumption that the LLM is obedient
+* No reliance on chat history for correctness
+* No implicit guarantees based on prompt wording
 
-EPIC 7 — Lead Storage & Artifacts
+---
 
-US-7.1 Store leads in database
+## 11. Success Criteria
 
-As a user  
-I want discovered leads stored in the database  
-So that they persist across sessions.
+The system is successful if:
 
-Acceptance criteria
+* No critical step can be skipped
+* All actions are auditable
+* Campaigns are recoverable
+* LLM failures do not corrupt state
 
-Leads include name, URL, attributes
+---
 
-Leads are linked to campaign
-
-Inserts are event-logged
-
-\---
-
-US-7.2 Export leads as file
-
-As a user  
-I want leads saved as Excel/CSV artifacts  
-So that I can inspect or reuse them externally.
-
-Acceptance criteria
-
-File written via MCP filesystem
-
-Artifact path is deterministic
-
-File creation is audited
-
-\---
-
-EPIC 8 — Lead Scoring & Prioritization
-
-US-8.1 Define scoring heuristics
-
-As a user  
-I want the agent to design scoring heuristics based on my goal  
-So that the most valuable leads are prioritized.
-
-Acceptance criteria
-
-Heuristics proposed by LLM
-
-Weights are explicit and documented
-
-Output is reviewable
-
-\---
-
-US-8.2 Apply scoring algorithm
-
-As a user  
-I want scores applied deterministically  
-So that results are reproducible.
-
-Acceptance criteria
-
-System validates weights
-
-Scores are computed in code
-
-Scores are persisted and logged
-
-\---
-
-EPIC 9 — Outreach Preparation
-
-US-9.1 Draft outreach messages
-
-As a user  
-I want the agent to draft warm, professional LinkedIn messages  
-So that I can prepare outreach efficiently.
-
-Acceptance criteria
-
-Messages are generated by LLM
-
-Messages are stored as artifacts
-
-Messages are not sent automatically
-
-\---
-
-EPIC 10 — UI & Transparency
-
-US-10.1 View task progress
-
-As a user  
-I want to see task status in the UI  
-So that I understand what is pending or complete.
-
-Acceptance criteria
-
-Tasks update in real time
-
-Status reflects system truth
-
-\---
-
-US-10.2 View audit logs
-
-As a user  
-I want to inspect audit and event logs  
-So that I can debug or review system behavior.
-
-Acceptance criteria
-
-Logs are queryable per campaign
-
-Logs are read-only
-
-\---
-
-EPIC 11 — Reliability & Recovery
-
-US-11.1 Safe restart
-
-As a user  
-I want the system to resume safely after restart  
-So that no data is lost and no steps are repeated incorrectly.
-
-Acceptance criteria
-
-State restored from DB and artifacts
-
-Completed tasks are not rerun
-
-Pending tasks remain pending
-
-\---
-
-EPIC 12 — Cost & Control
-
-US-12.1 Bounded LLM usage
-
-As a user  
-I want LLM usage to be bounded and predictable  
-So that costs remain low.
-
-Acceptance criteria
-
-Stateless LLM calls only
-
-Token limits enforced
-
-Cheap model used by default
-
-\---
-
-FINAL NOTE
-
-These user stories fully cover:
-
-your original prompt
-
-TODO discipline
-
-audit & event logging
-
-MCP usage
-
-lead discovery, scoring, storage
-
-conversational UX without state corruption
-
-solo-developer feasibility
-
-From here, you can:
-
-derive acceptance tests
-
-sequence implementation
-
-map directly to code modules
-
-If you want next, I can:
-
-convert these into BDD / Gherkin
-
-map stories → DB tables → API endpoints
-
-create an implementation checklist
-
-Just say which.
+**End of Specification**
