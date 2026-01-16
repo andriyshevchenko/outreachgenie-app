@@ -72,7 +72,6 @@ public sealed class TaskService : ITaskService
 
         campaign.Tasks.Add(task);
         await this._campaignRepository.Update(campaign, cancellationToken);
-        await this._campaignRepository.SaveChanges(cancellationToken);
 
         // Log event
         TaskCreatedEvent taskEvent = new(task.Id, campaignId, title, orderIndex);

@@ -68,7 +68,17 @@ public sealed class CampaignRepository : ICampaignRepository
     {
         ArgumentNullException.ThrowIfNull(entity);
         await using OutreachGenieDbContext context = await this._contextFactory.CreateDbContextAsync(cancellationToken);
-        context.Campaigns.Update(entity);
+
+        // Attach and mark as modified
+        context.Campaigns.Attach(entity);
+        context.Entry(entity).State = EntityState.Modified;
+
+        // Mark all tasks as added (they're new)
+        foreach (var task in entity.Tasks)
+        {
+            context.Entry(task).State = EntityState.Added;
+        }
+
         await context.SaveChangesAsync(cancellationToken);
     }
 
