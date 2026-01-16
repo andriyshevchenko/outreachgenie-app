@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using OutreachGenie.Api.Domain.Abstractions;
 using OutreachGenie.Api.Domain.Entities;
 using OutreachGenie.Api.Domain.Services;
+using OutreachGenie.Api.Models;
 
 namespace OutreachGenie.Api.Controllers;
 
@@ -49,6 +50,6 @@ public class TasksController : ControllerBase
             return NotFound(result.Error);
         }
 
-        return Ok(result.Value);
+        return Ok(TaskDto.FromEntity(result.Value));
     }
 }

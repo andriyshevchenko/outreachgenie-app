@@ -74,7 +74,7 @@ public sealed class CampaignRepository : ICampaignRepository
         context.Entry(entity).State = EntityState.Modified;
 
         // Mark all tasks as added (they're new)
-        foreach (var task in entity.Tasks)
+        foreach (CampaignTask task in entity.Tasks)
         {
             context.Entry(task).State = EntityState.Added;
         }
