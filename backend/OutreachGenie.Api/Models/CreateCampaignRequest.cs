@@ -1,0 +1,12 @@
+namespace OutreachGenie.Api.Models;
+
+/// <summary>
+/// Request to create a campaign.
+/// </summary>
+public sealed class CreateCampaignRequest
+{
+    /// <summary>
+    /// Campaign name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+}

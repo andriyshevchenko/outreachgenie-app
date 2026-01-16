@@ -3,15 +3,15 @@ import { ChatMessage } from '@/components/chat/ChatMessage';
 import { SuggestedActions } from '@/components/chat/SuggestedActions';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { apiClient, ApiError } from '@/lib/api';
-import { ChatMessageReceivedEvent, signalRHub } from '@/lib/signalr';
-import { FileAttachment, Message } from '@/types/agent';
+import { AgentRunUpdate, aguiClient } from '@/lib/agui';
+import { Message } from '@/types/agent';
 import { Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export function ChatPage(): JSX.Element {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [currentAssistantMessage, setCurrentAssistantMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -21,50 +21,109 @@ export function ChatPage(): JSX.Element {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, currentAssistantMessage]);
 
   useEffect(() => {
-    const handleChatMessage = (event: ChatMessageReceivedEvent) => {
-      const newMessage: Message = {
-        id: event.messageId,
-        role: event.role,
-        content: event.content,
-        timestamp: new Date(event.timestamp),
-      };
-      setMessages((prev) => [...prev, newMessage]);
-      setIsTyping(false);
-    };
-
-    if (signalRHub.connectionState !== null) {
-      signalRHub.onChatMessageReceived(handleChatMessage);
-    }
-
     return () => {
-      if (signalRHub.connectionState !== null) {
-        signalRHub.offAll();
-      }
+      aguiClient.disconnect();
     };
   }, []);
 
   const sendMessageToBackend = async (userMessage: string) => {
+    // Add user message immediately
+    const userMsg: Message = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: userMessage,
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
+    setCurrentAssistantMessage('');
 
     try {
-      const response = await apiClient.sendMessage(userMessage);
-      
-      const agentMessage: Message = {
-        id: response.messageId,
-        role: 'assistant',
-        content: response.content,
-        timestamp: new Date(response.timestamp),
-      };
+      await aguiClient.sendMessage(
+        userMessage,
+        undefined,
+        (update: AgentRunUpdate) => {
+          // Handle AG-UI streaming updates
+          if (update.type === 'TEXT_MESSAGE_CONTENT' && update.delta) {
+            // Accumulate text deltas
+            setCurrentAssistantMessage((prev) => prev + update.delta);
+          } else if (update.type === 'TEXT_MESSAGE_START') {
+            // Starting a new message
+            setCurrentAssistantMessage('');
+          } else if (update.type === 'TEXT_MESSAGE_END') {
+            // Message complete - will be finalized in complete callback
+            // Don't add message here to avoid duplicates
+          } else if (update.type === 'TOOL_CALL_START') {
+            // Show tool call in progress
+            const toolMsg = `🔧 Using tool: ${update.toolName ?? 'unknown'}`;
+            setCurrentAssistantMessage((prev) => prev + '\n' + toolMsg);
+          } else if (update.type === 'TOOL_CALL_END' && update.toolResult) {
+            // Show tool result
+            setCurrentAssistantMessage((prev) => prev + '\n✅ Tool completed');
+          } else if (update.type === 'RUN_COMPLETED') {
+            // Run complete
+            if (currentAssistantMessage) {
+              const agentMessage: Message = {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: currentAssistantMessage,
+                timestamp: new Date(),
+              };
+              setMessages((prev) => [...prev, agentMessage]);
+              setCurrentAssistantMessage('');
+            }
+            setIsTyping(false);
+          } else if (update.type === 'RUN_FAILED' || update.type === 'ERROR') {
+            // Handle errors
+            const errorText = update.error ?? update.message ?? 'Unknown error';
+            const errorMsg: Message = {
+              id: crypto.randomUUID(),
+              role: 'assistant',
+              content: `Sorry, I encountered an error: ${errorText}`,
+              timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, errorMsg]);
+            setCurrentAssistantMessage('');
+            setIsTyping(false);
+          }
+        },
+        (error: Error) => {
+          toast({
+            title: 'Error',
+            description: error.message,
+            variant: 'destructive',
+          });
 
-      setMessages((prev) => [...prev, agentMessage]);
+          const errorMsg: Message = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `Sorry, I encountered an error: ${error.message}`,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, errorMsg]);
+          setIsTyping(false);
+          setCurrentAssistantMessage('');
+        },
+        () => {
+          // Complete callback
+          if (currentAssistantMessage) {
+            const agentMessage: Message = {
+              id: crypto.randomUUID(),
+              role: 'assistant',
+              content: currentAssistantMessage,
+              timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, agentMessage]);
+            setCurrentAssistantMessage('');
+          }
+          setIsTyping(false);
+        }
+      );
     } catch (error) {
-      const apiError = error as ApiError;
-      const errorMessage = apiError.statusCode === 0 
-        ? 'Failed to connect to backend. Make sure the API server is running.'
-        : `API Error: ${apiError.message}`;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
       toast({
         title: 'Error',
@@ -78,28 +137,18 @@ export function ChatPage(): JSX.Element {
         content: `Sorry, I encountered an error: ${errorMessage}`,
         timestamp: new Date(),
       };
-
       setMessages((prev) => [...prev, errorMsg]);
-    } finally {
       setIsTyping(false);
+      setCurrentAssistantMessage('');
     }
   };
 
-  const handleSend = (content: string, attachments: FileAttachment[]) => {
-    const userMessage: Message = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content,
-      timestamp: new Date(),
-      attachments: attachments.length > 0 ? attachments : undefined,
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+  const handleSend = (content: string) => {
     void sendMessageToBackend(content);
   };
 
   const handleSuggestion = (prompt: string) => {
-    handleSend(prompt, []);
+    handleSend(prompt);
   };
 
   return (
@@ -137,7 +186,17 @@ export function ChatPage(): JSX.Element {
             {messages.map((message) => (
               <ChatMessage key={message.id} message={message} />
             ))}
-            {isTyping && (
+            {isTyping && currentAssistantMessage && (
+              <div className="flex gap-4">
+                <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-primary animate-pulse-subtle" />
+                </div>
+                <div className="chat-bubble-agent whitespace-pre-wrap">
+                  {currentAssistantMessage}
+                </div>
+              </div>
+            )}
+            {isTyping && !currentAssistantMessage && (
               <div className="flex gap-4">
                 <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center">
                   <Sparkles className="w-4 h-4 text-primary animate-pulse-subtle" />

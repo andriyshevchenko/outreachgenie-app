@@ -11,8 +11,17 @@
     <PackageVersion Include="Scrutor" Version="7.0.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
     <PackageVersion Include="Serilog" Version="4.3.0" />
+    <!-- Agent Framework -->
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.1.1" />
+    <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.2.0-preview.1.26063.2" />
+    <PackageVersion Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.260108.1" />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="1.0.0-preview.260108.1" />
+    <PackageVersion Include="Azure.AI.OpenAI" Version="2.3.0-beta.1" />
+    <PackageVersion Include="Azure.Identity" Version="1.14.2" />
     <!-- Infrastructure -->
     <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
     <PackageVersion Include="EFCore.NamingConventions" Version="10.0.0-rc.2" />
@@ -23,6 +32,7 @@
     <!-- Web.Api -->
     <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.1" />
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
