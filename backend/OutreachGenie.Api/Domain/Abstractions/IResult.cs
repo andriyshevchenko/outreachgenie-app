@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="IResult.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Abstractions;
 
 /// <summary>
@@ -14,10 +20,11 @@ public interface IResult<out T>
     /// <summary>
     /// The error message if the operation failed.
     /// </summary>
-    string Error { get; }
+    string ErrorMessage { get; }
 
     /// <summary>
     /// The value if the operation succeeded.
     /// </summary>
     T Value { get; }
 }
+

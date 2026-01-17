@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="ICampaignRepository.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using OutreachGenie.Api.Domain.Abstractions;
 using OutreachGenie.Api.Domain.Entities;
 
@@ -18,3 +24,4 @@ public interface ICampaignRepository : IRepository<Campaign>
     /// </summary>
     Task<Campaign?> LoadComplete(Guid campaignId, CancellationToken cancellationToken = default);
 }
+

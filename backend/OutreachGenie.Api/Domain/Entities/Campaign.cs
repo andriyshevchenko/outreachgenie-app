@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="Campaign.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Entities;
 
 /// <summary>
@@ -5,14 +11,6 @@ namespace OutreachGenie.Api.Domain.Entities;
 /// </summary>
 public sealed class Campaign
 {
-    private Campaign()
-    {
-        // Required for EF Core
-        this.Tasks = new List<CampaignTask>();
-        this.Leads = new List<Lead>();
-        this.Artifacts = new List<Artifact>();
-    }
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Campaign"/> class.
     /// </summary>
@@ -78,4 +76,13 @@ public sealed class Campaign
     /// Campaign artifacts.
     /// </summary>
     public ICollection<Artifact> Artifacts { get; private set; }
+
+    private Campaign()
+    {
+        // Required for EF Core
+        this.Tasks = new List<CampaignTask>();
+        this.Leads = new List<Lead>();
+        this.Artifacts = new List<Artifact>();
+    }
 }
+

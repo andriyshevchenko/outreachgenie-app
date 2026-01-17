@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="TaskEnforcementAgent.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.Runtime.CompilerServices;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
@@ -11,8 +17,8 @@ namespace OutreachGenie.Api.Orchestrators.Services;
 /// </summary>
 public sealed class TaskEnforcementAgent : DelegatingAIAgent
 {
-    private readonly ITaskService _taskService;
-    private readonly ILogger<TaskEnforcementAgent> _logger;
+    private readonly ITaskService taskService;
+    private readonly ILogger<TaskEnforcementAgent> logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TaskEnforcementAgent"/> class.
@@ -23,8 +29,8 @@ public sealed class TaskEnforcementAgent : DelegatingAIAgent
         ILogger<TaskEnforcementAgent> logger)
         : base(innerAgent)
     {
-        this._taskService = taskService;
-        this._logger = logger;
+        this.taskService = taskService;
+        this.logger = logger;
     }
 
     /// <inheritdoc />
@@ -40,11 +46,11 @@ public sealed class TaskEnforcementAgent : DelegatingAIAgent
         if (campaignId.HasValue)
         {
             // CRITICAL ENFORCEMENT: Check for next required task
-            Domain.Entities.CampaignTask? nextTask = await this._taskService.NextRequiredTask(campaignId.Value, cancellationToken);
+            Domain.Entities.CampaignTask? nextTask = await this.taskService.NextRequiredTask(campaignId.Value, cancellationToken);
 
             if (nextTask != null)
             {
-                this._logger.LogInformation(
+                this.logger.LogInformation(
                     "Task enforcement: Injecting pending task {TaskId} into system message",
                     nextTask.Id);
 
@@ -96,8 +102,9 @@ public sealed class TaskEnforcementAgent : DelegatingAIAgent
     /// </summary>
     private static Guid? ExtractCampaignId()
     {
-        // TODO: Implement extraction from options.AdditionalProperties or thread state
-        // For now, return null (task enforcement will be disabled)
+        // Campaign ID extraction not yet implemented
+        // Task enforcement will be disabled until context passing is added
         return null;
     }
 }
+

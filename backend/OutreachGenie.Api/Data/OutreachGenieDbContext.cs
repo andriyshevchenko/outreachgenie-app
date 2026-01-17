@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------
+// <copyright file="OutreachGenieDbContext.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using OutreachGenie.Api.Domain.Entities;
 
@@ -6,6 +13,7 @@ namespace OutreachGenie.Api.Data;
 /// <summary>
 /// Database context for OutreachGenie application.
 /// </summary>
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated public classes", Justification = "Instantiated via dependency injection")]
 public sealed class OutreachGenieDbContext : DbContext
 {
     /// <summary>
@@ -34,7 +42,7 @@ public sealed class OutreachGenieDbContext : DbContext
     /// <summary>
     /// Events dataset.
     /// </summary>
-    public DbSet<Event> Events => this.Set<Event>();
+    public DbSet<DomainEvent> Events => this.Set<DomainEvent>();
 
     /// <summary>
     /// Artifacts dataset.
@@ -101,7 +109,7 @@ public sealed class OutreachGenieDbContext : DbContext
         });
 
         // Event configuration
-        modelBuilder.Entity<Event>(entity =>
+        modelBuilder.Entity<DomainEvent>(entity =>
         {
             entity.ToTable("Events");
             entity.HasKey(e => e.Id);
@@ -140,3 +148,4 @@ public sealed class OutreachGenieDbContext : DbContext
         });
     }
 }
+

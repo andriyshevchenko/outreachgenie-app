@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="Lead.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Entities;
 
 /// <summary>
@@ -5,11 +11,6 @@ namespace OutreachGenie.Api.Domain.Entities;
 /// </summary>
 public sealed class Lead
 {
-    private Lead()
-    {
-        // Required for EF Core
-    }
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Lead"/> class.
     /// </summary>
@@ -71,4 +72,10 @@ public sealed class Lead
     /// Parent campaign.
     /// </summary>
     public Campaign Campaign { get; private set; } = null!;
+
+    private Lead()
+    {
+        // Required for EF Core
+    }
 }
+

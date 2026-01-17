@@ -1,15 +1,19 @@
+using System.Diagnostics.CodeAnalysis;
+
+// -----------------------------------------------------------------------
+// <copyright file="AgentThread.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Entities;
 
 /// <summary>
 /// Represents a persistent agent thread for state management.
 /// </summary>
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated public classes", Justification = "Instantiated by Entity Framework Core")]
 public sealed class AgentThread
 {
-    private AgentThread()
-    {
-        // Required for EF Core
-    }
-
     /// <summary>
     /// Initializes a new instance of the <see cref="AgentThread"/> class.
     /// </summary>
@@ -62,4 +66,10 @@ public sealed class AgentThread
     /// Parent campaign.
     /// </summary>
     public Campaign Campaign { get; private set; } = null!;
+
+    private AgentThread()
+    {
+        // Required for EF Core
+    }
 }
+

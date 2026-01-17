@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="CampaignPhase.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Entities;
 
 /// <summary>
@@ -21,5 +27,6 @@ public enum CampaignPhase
     Monitoring,
 
     /// <summary>Campaign completed.</summary>
-    Complete
+    Complete,
 }
+

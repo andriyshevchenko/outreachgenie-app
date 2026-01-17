@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="Result.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Abstractions;
 
 /// <summary>
@@ -6,20 +12,20 @@ namespace OutreachGenie.Api.Domain.Abstractions;
 /// <typeparam name="T">The type of the value when successful.</typeparam>
 public sealed class Result<T> : IResult<T>
 {
-    private readonly T? _value;
-    private readonly string _error;
+    private readonly T? value;
+    private readonly string error;
 
     private Result(T value)
     {
-        this._value = value;
-        this._error = string.Empty;
+        this.value = value;
+        this.error = string.Empty;
         this.IsSuccess = true;
     }
 
     private Result(string error)
     {
-        this._value = default;
-        this._error = error;
+        this.value = default;
+        this.error = error;
         this.IsSuccess = false;
     }
 
@@ -27,12 +33,12 @@ public sealed class Result<T> : IResult<T>
     public bool IsSuccess { get; }
 
     /// <inheritdoc />
-    public string Error => this._error;
+    public string ErrorMessage => this.error;
 
     /// <inheritdoc />
     public T Value =>
         this.IsSuccess
-            ? this._value!
+            ? this.value!
             : throw new InvalidOperationException("Cannot access Value of a failed result");
 
     /// <summary>
@@ -45,3 +51,4 @@ public sealed class Result<T> : IResult<T>
     /// </summary>
     public static Result<T> Failure(string error) => new(error);
 }
+

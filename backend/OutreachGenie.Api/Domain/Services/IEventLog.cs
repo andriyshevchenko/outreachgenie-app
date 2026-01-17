@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="IEventLog.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using OutreachGenie.Api.Domain.Abstractions;
 using OutreachGenie.Api.Domain.Entities;
 
@@ -16,5 +22,6 @@ public interface IEventLog
     /// <summary>
     /// Retrieves events for a campaign.
     /// </summary>
-    Task<IEnumerable<Event>> GetEvents(Guid campaignId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<DomainEvent>> GetEvents(Guid campaignId, CancellationToken cancellationToken = default);
 }
+

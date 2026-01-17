@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="IRepository.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Abstractions;
 
 /// <summary>
@@ -37,3 +43,4 @@ public interface IRepository<T>
     /// </summary>
     Task<int> SaveChanges(CancellationToken cancellationToken = default);
 }
+

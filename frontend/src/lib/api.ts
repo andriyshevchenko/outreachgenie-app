@@ -7,7 +7,7 @@
 // Note: This file exceeds 150 lines but would require substantial refactoring to split into smaller modules
 // while maintaining cohesion of the API client logic and type definitions.
 
-const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:5063';
+const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api';
 
 class ApiError extends Error {
     statusCode: number;
@@ -84,11 +84,11 @@ class ApiClient {
 
     // Campaign endpoints
     async getCampaigns() {
-        return this.request<Campaign[]>('/api/campaigns');
+        return this.request<Campaign[]>('/campaigns');
     }
 
     async getCampaign(id: string) {
-        return this.request<Campaign>(`/api/campaigns/${id}`);
+        return this.request<Campaign>(`/campaigns/${id}`);
     }
 
     async createCampaign(request: CreateCampaignRequest) {

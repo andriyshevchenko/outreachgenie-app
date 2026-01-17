@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="TasksController.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Mvc;
 using OutreachGenie.Api.Domain.Abstractions;
@@ -14,14 +20,14 @@ namespace OutreachGenie.Api.Controllers;
 [Route("api/campaigns/{campaignId}/tasks")]
 public class TasksController : ControllerBase
 {
-    private readonly ITaskService _taskService;
+    private readonly ITaskService taskService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TasksController"/> class.
     /// </summary>
     public TasksController(ITaskService taskService)
     {
-        _taskService = taskService;
+        this.taskService = taskService;
     }
 
     /// <summary>
@@ -38,7 +44,7 @@ public class TasksController : ControllerBase
             return BadRequest("Request body is required");
         }
 
-        Result<CampaignTask> result = await _taskService.CreateTask(
+        Result<CampaignTask> result = await this.taskService.CreateTask(
             campaignId,
             request.Title,
             request.Description,
@@ -47,9 +53,10 @@ public class TasksController : ControllerBase
 
         if (!result.IsSuccess)
         {
-            return NotFound(result.Error);
+            return NotFound(result.ErrorMessage);
         }
 
         return Ok(TaskDto.FromEntity(result.Value));
     }
 }
+

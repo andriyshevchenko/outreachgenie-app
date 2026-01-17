@@ -12,10 +12,10 @@ export interface AgentMessage {
 }
 
 export interface AgentRunUpdate {
-    // AG-UI standard types
+    // AG-UI standard types (matching Microsoft Agent Framework)
     type: 'RUN_STARTED' | 'TEXT_MESSAGE_START' | 'TEXT_MESSAGE_CONTENT' | 'TEXT_MESSAGE_END' |
     'TOOL_CALL_START' | 'TOOL_CALL_CONTENT' | 'TOOL_CALL_END' |
-    'RUN_COMPLETED' | 'RUN_FAILED' | 'ERROR';
+    'RUN_FINISHED' | 'RUN_FAILED' | 'ERROR';
 
     // Common fields
     threadId?: string;
@@ -96,11 +96,14 @@ export class AGUIClient {
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
                         const data = line.slice(6);
+                        console.log('[AGUI] Received SSE data:', data);
                         try {
                             const update = JSON.parse(data) as AgentRunUpdate;
+                            console.log('[AGUI] Parsed update:', update);
                             this.handleMessage(update);
 
-                            if (update.type === 'RUN_COMPLETED' || update.type === 'RUN_FAILED') {
+                            if (update.type === 'RUN_FINISHED' || update.type === 'RUN_FAILED') {
+                                console.log('[AGUI] Run completed, calling handleComplete');
                                 this.handleComplete();
                                 return;
                             }

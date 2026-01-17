@@ -3,15 +3,18 @@ import { ChatMessage } from '@/components/chat/ChatMessage';
 import { SuggestedActions } from '@/components/chat/SuggestedActions';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { AgentRunUpdate, aguiClient } from '@/lib/agui';
+import { AgentChatClient, ChatMessage as ChatMsg } from '@/lib/agent-chat';
 import { Message } from '@/types/agent';
 import { Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+
+const chatClient = new AgentChatClient(''); // Use relative URL - proxied by Vite
 
 export function ChatPage(): JSX.Element {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [currentAssistantMessage, setCurrentAssistantMessage] = useState('');
+  const currentAssistantMessageRef = useRef<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -22,12 +25,6 @@ export function ChatPage(): JSX.Element {
   useEffect(() => {
     scrollToBottom();
   }, [messages, currentAssistantMessage]);
-
-  useEffect(() => {
-    return () => {
-      aguiClient.disconnect();
-    };
-  }, []);
 
   const sendMessageToBackend = async (userMessage: string) => {
     // Add user message immediately
@@ -40,88 +37,83 @@ export function ChatPage(): JSX.Element {
     setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
     setCurrentAssistantMessage('');
+    currentAssistantMessageRef.current = '';
 
     try {
-      await aguiClient.sendMessage(
-        userMessage,
-        undefined,
-        (update: AgentRunUpdate) => {
-          // Handle AG-UI streaming updates
-          if (update.type === 'TEXT_MESSAGE_CONTENT' && update.delta) {
-            // Accumulate text deltas
-            setCurrentAssistantMessage((prev) => prev + update.delta);
-          } else if (update.type === 'TEXT_MESSAGE_START') {
-            // Starting a new message
-            setCurrentAssistantMessage('');
-          } else if (update.type === 'TEXT_MESSAGE_END') {
-            // Message complete - will be finalized in complete callback
-            // Don't add message here to avoid duplicates
-          } else if (update.type === 'TOOL_CALL_START') {
-            // Show tool call in progress
-            const toolMsg = `🔧 Using tool: ${update.toolName ?? 'unknown'}`;
-            setCurrentAssistantMessage((prev) => prev + '\n' + toolMsg);
-          } else if (update.type === 'TOOL_CALL_END' && update.toolResult) {
-            // Show tool result
-            setCurrentAssistantMessage((prev) => prev + '\n✅ Tool completed');
-          } else if (update.type === 'RUN_COMPLETED') {
-            // Run complete
-            if (currentAssistantMessage) {
-              const agentMessage: Message = {
-                id: crypto.randomUUID(),
-                role: 'assistant',
-                content: currentAssistantMessage,
-                timestamp: new Date(),
-              };
-              setMessages((prev) => [...prev, agentMessage]);
-              setCurrentAssistantMessage('');
-            }
-            setIsTyping(false);
-          } else if (update.type === 'RUN_FAILED' || update.type === 'ERROR') {
-            // Handle errors
-            const errorText = update.error ?? update.message ?? 'Unknown error';
-            const errorMsg: Message = {
-              id: crypto.randomUUID(),
-              role: 'assistant',
-              content: `Sorry, I encountered an error: ${errorText}`,
-              timestamp: new Date(),
-            };
-            setMessages((prev) => [...prev, errorMsg]);
-            setCurrentAssistantMessage('');
-            setIsTyping(false);
-          }
+      // Convert messages to agent format
+      const agentMessages: ChatMsg[] = [
+        ...messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+        {
+          role: 'user' as const,
+          content: userMessage,
         },
-        (error: Error) => {
-          toast({
-            title: 'Error',
-            description: error.message,
-            variant: 'destructive',
-          });
+      ];
 
-          const errorMsg: Message = {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: `Sorry, I encountered an error: ${error.message}`,
-            timestamp: new Date(),
-          };
-          setMessages((prev) => [...prev, errorMsg]);
-          setIsTyping(false);
+      // Stream responses from agent
+      for await (const event of chatClient.streamChat(agentMessages)) {
+        console.log('SSE Event:', event.type, event.data);
+        
+        if (event.type === 'start') {
+          // Start event
+          currentAssistantMessageRef.current = '';
           setCurrentAssistantMessage('');
-        },
-        () => {
-          // Complete callback
-          if (currentAssistantMessage) {
+        } else if (event.type === 'update') {
+          // Raw update from agent - extract text from AgentRunResponseUpdate
+          const data = event.data as any;
+          if (data && data.Contents && Array.isArray(data.Contents)) {
+            // Extract text from Contents array
+            for (const content of data.Contents) {
+              if (content.type === 'text' && content.Text && content.Text.length > 0) {
+                console.log('Adding text:', content.Text);
+                currentAssistantMessageRef.current += content.Text;
+                setCurrentAssistantMessage(currentAssistantMessageRef.current);
+              }
+            }
+          }
+        } else if (event.type === 'message') {
+          // Text content
+          const content = event.data.content || '';
+          currentAssistantMessageRef.current += content;
+          setCurrentAssistantMessage(currentAssistantMessageRef.current);
+        } else if (event.type === 'tool_call') {
+          // Tool invocation
+          const toolMsg = `\n🔧 Using tool: ${event.data.name}`;
+          currentAssistantMessageRef.current += toolMsg;
+          setCurrentAssistantMessage(currentAssistantMessageRef.current);
+        } else if (event.type === 'tool_result') {
+          // Tool completed
+          currentAssistantMessageRef.current += '\n✅ Tool completed';
+          setCurrentAssistantMessage(currentAssistantMessageRef.current);
+        } else if (event.type === 'done') {
+          // Stream complete
+          if (currentAssistantMessageRef.current) {
             const agentMessage: Message = {
               id: crypto.randomUUID(),
               role: 'assistant',
-              content: currentAssistantMessage,
+              content: currentAssistantMessageRef.current,
               timestamp: new Date(),
             };
             setMessages((prev) => [...prev, agentMessage]);
             setCurrentAssistantMessage('');
+            currentAssistantMessageRef.current = '';
           }
           setIsTyping(false);
+        } else if (event.type === 'error') {
+          // Error occurred
+          const errorMsg: Message = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `Sorry, I encountered an error: ${event.data.message}`,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, errorMsg]);
+          setCurrentAssistantMessage('');
+          setIsTyping(false);
         }
-      );
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
@@ -140,6 +132,7 @@ export function ChatPage(): JSX.Element {
       setMessages((prev) => [...prev, errorMsg]);
       setIsTyping(false);
       setCurrentAssistantMessage('');
+      currentAssistantMessageRef.current = '';
     }
   };
 

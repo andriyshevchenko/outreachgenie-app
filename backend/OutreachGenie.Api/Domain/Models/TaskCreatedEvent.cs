@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="TaskCreatedEvent.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using OutreachGenie.Api.Domain.Abstractions;
 
 namespace OutreachGenie.Api.Domain.Models;
@@ -53,3 +59,4 @@ public sealed class TaskCreatedEvent : IDomainEvent
     /// </summary>
     public int OrderIndex { get; }
 }
+

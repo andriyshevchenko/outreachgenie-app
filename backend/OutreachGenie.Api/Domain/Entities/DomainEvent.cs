@@ -1,9 +1,15 @@
+// -----------------------------------------------------------------------
+// <copyright file="DomainEvent.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Entities;
 
 /// <summary>
 /// Represents a domain event in the audit log.
 /// </summary>
-internal sealed class DomainEvent
+public sealed class DomainEvent
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="DomainEvent"/> class.
@@ -59,3 +65,4 @@ internal sealed class DomainEvent
         // Required for EF Core
     }
 }
+

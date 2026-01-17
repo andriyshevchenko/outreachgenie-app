@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------
-// <copyright file="LeadsDiscoveredEvent.cs" company="OutreachGenie">
+// <copyright file="CampaignCreatedEvent.cs" company="OutreachGenie">
 // Copyright (c) OutreachGenie. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -9,23 +9,21 @@ using OutreachGenie.Api.Domain.Abstractions;
 namespace OutreachGenie.Api.Domain.Models;
 
 /// <summary>
-/// Event raised when leads are discovered.
+/// Event raised when a campaign is created.
 /// </summary>
-public sealed class LeadsDiscoveredEvent : IDomainEvent
+public sealed class CampaignCreatedEvent : IDomainEvent
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="LeadsDiscoveredEvent"/> class.
+    /// Initializes a new instance of the <see cref="CampaignCreatedEvent"/> class.
     /// </summary>
-    public LeadsDiscoveredEvent(
+    public CampaignCreatedEvent(
         Guid campaignId,
-        int count,
-        string source)
+        string name)
     {
         this.EventId = Guid.NewGuid();
         this.Timestamp = DateTime.UtcNow;
         this.CampaignId = campaignId;
-        this.Count = count;
-        this.Source = source;
+        this.Name = name;
     }
 
     /// <inheritdoc />
@@ -35,7 +33,7 @@ public sealed class LeadsDiscoveredEvent : IDomainEvent
     public DateTime Timestamp { get; }
 
     /// <inheritdoc />
-    public string EventType => nameof(LeadsDiscoveredEvent);
+    public string EventType => nameof(CampaignCreatedEvent);
 
     /// <summary>
     /// Campaign identifier.
@@ -43,13 +41,8 @@ public sealed class LeadsDiscoveredEvent : IDomainEvent
     public Guid CampaignId { get; }
 
     /// <summary>
-    /// Number of leads discovered.
+    /// Campaign name.
     /// </summary>
-    public int Count { get; }
-
-    /// <summary>
-    /// Source of leads.
-    /// </summary>
-    public string Source { get; }
+    public string Name { get; }
 }
 

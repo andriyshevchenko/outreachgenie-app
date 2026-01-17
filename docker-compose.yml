@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "5063:5063"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5063
+      - OpenAI__ApiKey=${OPENAI_API_KEY}
+      - OpenAI__Model=gpt-4o-mini
+    networks:
+      - outreachgenie-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - outreachgenie-network
+
+networks:
+  outreachgenie-network:
+    driver: bridge

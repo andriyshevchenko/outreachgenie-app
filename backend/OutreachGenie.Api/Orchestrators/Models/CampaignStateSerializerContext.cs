@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="CampaignStateSerializerContext.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -11,3 +17,4 @@ namespace OutreachGenie.Api.Orchestrators.Models;
 internal sealed partial class CampaignStateSerializerContext : JsonSerializerContext
 {
 }
+

@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="CreateTaskRequest.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Mvc;
 using OutreachGenie.Api.Domain.Abstractions;
@@ -14,3 +20,4 @@ namespace OutreachGenie.Api.Controllers;
 /// <param name="OrderIndex">Task order index.</param>
 /// <param name="RequiresApproval">Whether task requires approval.</param>
 public record CreateTaskRequest(string Title, string Description, int? OrderIndex, bool? RequiresApproval);
+

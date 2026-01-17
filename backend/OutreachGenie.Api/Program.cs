@@ -29,7 +29,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:8081")
+        policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -66,7 +66,12 @@ builder.Services.AddSingleton<IChatClient>(sp =>
         string modelId = builder.Configuration["OpenAI:Model"] ?? "gpt-4o";
         logger.LogInformation("Using OpenAI API with model: {Model}", modelId);
         OpenAI.Chat.ChatClient openAIClient = new(modelId, openAIApiKey);
-        return openAIClient.AsIChatClient();
+
+        // CRITICAL: Wrap with function invocation middleware for tool calling
+        // The Agent Framework uses this to intercept and execute function calls
+        return new ChatClientBuilder(openAIClient.AsIChatClient())
+            .UseFunctionInvocation()
+            .Build();
     }
 
     // Option 2: Azure OpenAI
@@ -76,7 +81,12 @@ builder.Services.AddSingleton<IChatClient>(sp =>
         logger.LogInformation("Using Azure OpenAI at {Endpoint} with deployment: {Deployment}", azureOpenAIEndpoint, deploymentName);
         AzureOpenAIClient azureClient = new(new Uri(azureOpenAIEndpoint), new DefaultAzureCredential());
         ChatClient chatClient = azureClient.GetChatClient(deploymentName);
-        return chatClient.AsIChatClient();
+
+        // CRITICAL: Wrap with function invocation middleware for tool calling
+        // The Agent Framework uses this to intercept and execute function calls
+        return new ChatClientBuilder(chatClient.AsIChatClient())
+            .UseFunctionInvocation()
+            .Build();
     }
 
     throw new InvalidOperationException(
@@ -85,54 +95,72 @@ builder.Services.AddSingleton<IChatClient>(sp =>
         "  - Azure OpenAI: Set AzureOpenAI:Endpoint in appsettings.json or AZURE_OPENAI_ENDPOINT environment variable");
 });
 
-// Configure Microsoft Agent Framework (singleton with transient dependencies)
-builder.Services.AddSingleton<AIAgent>(sp =>
+// Configure tools for direct IChatClient use (no Agent Framework)
+builder.Services.AddSingleton<IReadOnlyList<AITool>>(sp =>
 {
-    IChatClient chatClient = sp.GetRequiredService<IChatClient>();
     ILogger<Program> logger = sp.GetRequiredService<ILogger<Program>>();
-
-    logger.LogInformation("Creating OutreachGenie Agent with configured AI provider");
+    logger.LogInformation("Creating OutreachGenie tools for direct IChatClient");
 
     // Get tools instance (transient with pooled DbContext)
     CampaignAgentTools toolsInstance = sp.GetRequiredService<CampaignAgentTools>();
-    IList<AITool> tools = new List<AITool>
-    {
+    List<AITool> tools =
+    [
+        AIFunctionFactory.Create(toolsInstance.CreateCampaign),
         AIFunctionFactory.Create(toolsInstance.CreateTask),
         AIFunctionFactory.Create(toolsInstance.CompleteTask),
         AIFunctionFactory.Create(toolsInstance.GetCampaignStatus),
         AIFunctionFactory.Create(toolsInstance.DiscoverLeads),
         AIFunctionFactory.Create(toolsInstance.ScoreLead),
-    };
+    ];
 
-    string agentInstructions = """
-            You are OutreachGenie, an AI assistant for managing marketing and sales campaigns.
+    logger.LogInformation(
+        "Registered {ToolCount} tools: {Tools}",
+        tools.Count,
+        string.Join(", ", tools.Select(t => t.Name)));
 
-            CRITICAL RULES:
-            1. Tasks must be completed in order - you cannot skip ahead
-            2. When you see a pending task in the system message, focus on completing it first
-            3. Use the provided tools to interact with the campaign system
-            4. All actions are logged and auditable
-            5. State persists in the database, not in conversation memory
+    return tools;
+});
 
-            Your capabilities:
-            - Create structured task lists for campaigns
-            - Mark tasks as completed (this advances the campaign)
-            - Discover and score leads
-            - Track campaign progress
+// System prompt for the assistant
+builder.Services.AddSingleton<string>(sp =>
+{
+    return """
+        You are OutreachGenie, an AI assistant for managing LinkedIn outreach campaigns.
 
-            Always confirm actions with the user before marking critical tasks as complete.
-            Provide clear explanations of what you're doing and why.
-            """;
+        You have access to tools/functions to interact with the campaign system.
+        Use these tools to create campaigns, manage tasks, discover leads, and score prospects.
 
-    AIAgent baseAgent = chatClient.CreateAIAgent(
-        name: "OutreachGenieAgent",
-        instructions: agentInstructions,
-        tools: tools);
+        WORKFLOW:
+        When a user asks to create a campaign:
+        1. Call CreateCampaign(name, description) to create it
+        2. Call CreateTask() to add necessary tasks (Lead Discovery, Lead Scoring, Message Drafting, etc.)
+        3. Use DiscoverLeads() to find prospects
+        4. Use ScoreLead() to prioritize leads
+        5. Use GetCampaignStatus() to check progress
+        6. Use CompleteTask() to mark tasks done
+        
+        After calling tools and completing the user's request, provide a summary of what you did.
+        
+        EXAMPLES:
+        
+        User: "Create a LinkedIn outreach campaign for SaaS CTOs"
+        Response:
+        [Call CreateCampaign("SaaS CTO Outreach", "Targeting CTOs at B2B SaaS companies")]
+        [Call CreateTask("Lead Discovery", "Find CTOs at B2B SaaS companies", ...)]
+        [Call CreateTask("Lead Scoring", "Score and prioritize leads", ...)]
+        "I've created your SaaS CTO Outreach campaign with 2 initial tasks: Lead Discovery and Lead Scoring."
+        
+        User: "Find 20 leads for campaign X"
+        Response:
+        [Call DiscoverLeads(campaignId, "description", 20)]
+        "I've discovered 20 leads for your campaign."
 
-    // Wrap with task enforcement middleware (transient dependencies)
-    ITaskService taskService = sp.GetRequiredService<ITaskService>();
-    ILogger<TaskEnforcementAgent> enforcementLogger = sp.GetRequiredService<ILogger<TaskEnforcementAgent>>();
-    return new TaskEnforcementAgent(baseAgent, taskService, enforcementLogger);
+        IMPORTANT:
+        - Use tools to perform actions
+        - After tool calls succeed, summarize what you did
+        - Don't call tools repeatedly without reason
+        - If you've completed the user's request, provide a final summary
+        """;
 });
 
 // Add AG-UI support
@@ -164,12 +192,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Map AG-UI endpoint for agent interaction
-AIAgent agent = app.Services.GetRequiredService<AIAgent>();
-app.MapAGUI("/api/agent", agent);
+// AG-UI removed since we're using direct IChatClient instead of AIAgent
+// Use the REST API at /api/agentchat/stream for chat functionality
 
-app.Logger.LogInformation("OutreachGenie API started successfully");
-app.Logger.LogInformation("AG-UI endpoint: /api/agent");
-app.Logger.LogInformation("Using Azure OpenAI: {Endpoint}", azureOpenAIEndpoint);
+app.Logger.LogInformation("OutreachGenie API started successfully. Using OpenAI with model: {Model}",
+    builder.Configuration["OpenAI:Model"] ?? "gpt-4o");
 
 await app.RunAsync();
+

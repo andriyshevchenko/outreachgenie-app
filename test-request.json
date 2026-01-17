@@ -1,0 +1,8 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "text": "Create a campaign targeting CTOs at SaaS companies"
+    }
+  ]
+}

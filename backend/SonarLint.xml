@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AnalysisInput>
+  <Settings>
+    <Setting>
+      <Key>sonar.cs.analyzer.projectOutPaths</Key>
+      <Value>bin</Value>
+    </Setting>
+  </Settings>
+  <Rules>
+    <Rule>
+      <Key>S134</Key>
+      <Parameters>
+        <Parameter>
+          <Key>max</Key>
+          <Value>3</Value>
+        </Parameter>
+      </Parameters>
+    </Rule>
+  </Rules>
+</AnalysisInput>

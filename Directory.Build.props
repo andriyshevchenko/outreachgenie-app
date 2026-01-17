@@ -1,13 +1,5 @@
 <Project>
   <PropertyGroup>
-	<!--If you want to target .NET 8, uncomment the below line and adjust the Directory.Packages.props file.
-	You will also need to update the Dockerfile to use .NET 8 instead of .NET 10 - both are in Web.Api project.-->
-    <!--<TargetFramework>net8.0</TargetFramework>-->
-
-	<!--If you want to target .NET 9, uncomment the below line and adjust the Directory.Packages.props file.
-	You will also need to update the Dockerfile to use .NET 9 instead of .NET 10 - both are in Web.Api project.-->
-	<!--<TargetFramework>net9.0</TargetFramework>-->
-
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -25,7 +17,9 @@
     <!-- Enforce sealed classes where possible (helps with [C8-C]) -->
     <ReportAnalyzer>true</ReportAnalyzer>
 
-	<NoWarn>NU1608</NoWarn>
+	<!-- Suppress warnings -->
+	<!-- CA2007: ConfigureAwait not needed in ASP.NET Core (no sync context) -->
+	<NoWarn>NU1608;CA2007</NoWarn>
   </PropertyGroup>
   <ItemGroup Condition="'$(MSBuildProjectExtension)' != '.dcproj'">
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />

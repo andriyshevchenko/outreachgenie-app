@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="TaskStatus.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Entities;
 
 /// <summary>
@@ -15,5 +21,6 @@ public enum TaskStatus
     Completed,
 
     /// <summary>Task blocked by dependencies.</summary>
-    Blocked
+    Blocked,
 }
+

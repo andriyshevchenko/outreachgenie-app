@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="TaskDto.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using OutreachGenie.Api.Domain.Entities;
 
 namespace OutreachGenie.Api.Models;
@@ -55,7 +61,7 @@ public sealed class TaskDto
     /// <summary>
     /// Creates DTO from entity.
     /// </summary>
-    public static TaskDto FromEntity(CampaignTask task)
+    internal static TaskDto FromEntity(CampaignTask task)
     {
         ArgumentNullException.ThrowIfNull(task);
 
@@ -73,3 +79,4 @@ public sealed class TaskDto
         };
     }
 }
+

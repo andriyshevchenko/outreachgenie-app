@@ -1,4 +1,11 @@
+// -----------------------------------------------------------------------
+// <copyright file="CampaignAgentTools.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Microsoft.Extensions.AI;
 using OutreachGenie.Api.Domain.Abstractions;
@@ -14,14 +21,15 @@ namespace OutreachGenie.Api.Orchestrators.Services;
 /// These tools are the interface between the LLM and the system.
 /// All tools enforce invariants and log actions for auditability.
 /// </summary>
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated public classes", Justification = "Instantiated via dependency injection")]
 public sealed class CampaignAgentTools
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
-    private readonly ICampaignRepository _campaignRepository;
-    private readonly ITaskService _taskService;
-    private readonly IEventLog _eventLog;
-    private readonly ILogger<CampaignAgentTools> _logger;
+    private readonly ICampaignRepository campaignRepository;
+    private readonly ITaskService taskService;
+    private readonly IEventLog eventLog;
+    private readonly ILogger<CampaignAgentTools> logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CampaignAgentTools"/> class.
@@ -32,10 +40,38 @@ public sealed class CampaignAgentTools
         IEventLog eventLog,
         ILogger<CampaignAgentTools> logger)
     {
-        this._campaignRepository = campaignRepository;
-        this._taskService = taskService;
-        this._eventLog = eventLog;
-        this._logger = logger;
+        this.campaignRepository = campaignRepository;
+        this.taskService = taskService;
+        this.eventLog = eventLog;
+        this.logger = logger;
+    }
+
+    /// <summary>
+    /// Creates a new campaign.
+    /// </summary>
+    [Description("Create a new marketing or sales campaign. This is the first step to start working on a campaign. Returns the campaign ID that you must use in subsequent tool calls.")]
+    public async Task<string> CreateCampaign(
+        [Description("Campaign name")] string name,
+        [Description("Campaign description or goals")] string description)
+    {
+        this.logger.LogInformation("Agent creating campaign: {Name}", name);
+
+        DateTime now = DateTime.UtcNow;
+        Campaign campaign = new(
+            Guid.NewGuid(),
+            name,
+            CampaignPhase.Planning,
+            now,
+            description);
+
+        await this.campaignRepository.Add(campaign);
+
+        // Log event
+        var campaignEvent = new CampaignCreatedEvent(campaign.Id, name);
+        await this.eventLog.Append(campaignEvent);
+
+        // Return the GUID directly for easier parsing by LLM
+        return $"Campaign created successfully with ID: {campaign.Id}. Use this exact ID in subsequent tool calls (CreateTask, DiscoverLeads, etc.)";
     }
 
     /// <summary>
@@ -43,26 +79,31 @@ public sealed class CampaignAgentTools
     /// </summary>
     [Description("Create a new task in the campaign. Tasks are executed in order and cannot be skipped.")]
     public async Task<string> CreateTask(
-        [Description("Campaign identifier")] Guid campaignId,
+        [Description("Campaign identifier (GUID from CreateCampaign)")] string campaignId,
         [Description("Task title")] string title,
         [Description("Detailed task description")] string description,
         [Description("Whether this task requires user approval")] bool requiresApproval = false)
     {
-        this._logger.LogInformation(
+        if (!Guid.TryParse(campaignId, out Guid campaignGuid))
+        {
+            return $"Error: Invalid campaign ID '{campaignId}'. Must be a valid GUID.";
+        }
+
+        this.logger.LogInformation(
             "Agent creating task: {Title} for campaign {CampaignId}",
             title,
-            campaignId);
+            campaignGuid);
 
-        Result<CampaignTask> result = await this._taskService.CreateTask(
-            campaignId,
+        Result<CampaignTask> result = await this.taskService.CreateTask(
+            campaignGuid,
             title,
             description,
             requiresApproval);
 
         if (!result.IsSuccess)
         {
-            this._logger.LogError("Failed to create task: {Error}", result.Error);
-            return $"Error: {result.Error}";
+            this.logger.LogError("Failed to create task: {Error}", result.ErrorMessage);
+            return $"Error: {result.ErrorMessage}";
         }
 
         return $"Task created successfully: {title} (ID: {result.Value.Id})";
@@ -73,16 +114,21 @@ public sealed class CampaignAgentTools
     /// </summary>
     [Description("Mark a task as completed. This allows the campaign to progress to the next task.")]
     public async Task<string> CompleteTask(
-        [Description("Task identifier")] Guid taskId)
+        [Description("Task identifier (GUID from CreateTask)")] string taskId)
     {
-        this._logger.LogInformation("Agent completing task: {TaskId}", taskId);
+        if (!Guid.TryParse(taskId, out Guid taskGuid))
+        {
+            return $"Error: Invalid task ID '{taskId}'. Must be a valid GUID.";
+        }
 
-        Result<CampaignTask> result = await this._taskService.CompleteTask(taskId);
+        this.logger.LogInformation("Agent completing task: {TaskId}", taskGuid);
+
+        Result<CampaignTask> result = await this.taskService.CompleteTask(taskGuid);
 
         if (!result.IsSuccess)
         {
-            this._logger.LogError("Failed to complete task: {Error}", result.Error);
-            return $"Error: {result.Error}";
+            this.logger.LogError("Failed to complete task: {Error}", result.ErrorMessage);
+            return $"Error: {result.ErrorMessage}";
         }
 
         return $"Task completed successfully: {result.Value.Title}";
@@ -93,11 +139,16 @@ public sealed class CampaignAgentTools
     /// </summary>
     [Description("Get the current status of the campaign including phase, tasks, and progress.")]
     public async Task<string> GetCampaignStatus(
-        [Description("Campaign identifier")] Guid campaignId)
+        [Description("Campaign identifier (GUID from CreateCampaign)")] string campaignId)
     {
-        this._logger.LogInformation("Agent requesting campaign status: {CampaignId}", campaignId);
+        if (!Guid.TryParse(campaignId, out Guid campaignGuid))
+        {
+            return $"Error: Invalid campaign ID '{campaignId}'. Must be a valid GUID.";
+        }
 
-        Campaign? campaign = await this._campaignRepository.LoadComplete(campaignId);
+        this.logger.LogInformation("Agent requesting campaign status: {CampaignId}", campaignGuid);
+
+        Campaign? campaign = await this.campaignRepository.LoadComplete(campaignGuid);
 
         if (campaign == null)
         {
@@ -124,17 +175,22 @@ public sealed class CampaignAgentTools
     /// </summary>
     [Description("Discover and add leads to the campaign. This tool simulates lead discovery.")]
     public async Task<string> DiscoverLeads(
-        [Description("Campaign identifier")] Guid campaignId,
+        [Description("Campaign identifier (GUID from CreateCampaign)")] string campaignId,
         [Description("Search criteria or description of target leads")] string criteria,
         [Description("Number of leads to discover")] int count = 10)
     {
-        this._logger.LogInformation(
+        if (!Guid.TryParse(campaignId, out Guid campaignGuid))
+        {
+            return $"Error: Invalid campaign ID '{campaignId}'. Must be a valid GUID.";
+        }
+
+        this.logger.LogInformation(
             "Agent discovering {Count} leads for campaign {CampaignId} with criteria: {Criteria}",
             count,
-            campaignId,
+            campaignGuid,
             criteria);
 
-        Campaign? campaign = await this._campaignRepository.FindById(campaignId);
+        Campaign? campaign = await this.campaignRepository.FindById(campaignGuid);
 
         if (campaign == null)
         {
@@ -150,12 +206,12 @@ public sealed class CampaignAgentTools
                 Name = $"Lead {i + 1}",
                 Company = $"Company {i + 1}",
                 Criteria = criteria,
-                GeneratedAt = DateTime.UtcNow
+                GeneratedAt = DateTime.UtcNow,
             });
 
             var lead = new Lead(
                 Guid.NewGuid(),
-                campaignId,
+                campaignGuid,
                 "Simulated Discovery",
                 leadData,
                 DateTime.UtcNow);
@@ -164,11 +220,11 @@ public sealed class CampaignAgentTools
             campaign.Leads.Add(lead);
         }
 
-        await this._campaignRepository.SaveChanges();
+        await this.campaignRepository.Update(campaign);
 
         // Log event
-        var leadsEvent = new LeadsDiscoveredEvent(campaignId, count, "Simulated Discovery");
-        await this._eventLog.Append(leadsEvent);
+        var leadsEvent = new LeadsDiscoveredEvent(campaignGuid, count, "Simulated Discovery");
+        await this.eventLog.Append(leadsEvent);
 
         return $"Successfully discovered {count} leads for campaign {campaign.Name}";
     }
@@ -178,13 +234,18 @@ public sealed class CampaignAgentTools
     /// </summary>
     [Description("Score a lead based on fit and priority. Score should be between 0 and 100.")]
     public async Task<string> ScoreLead(
-        [Description("Lead identifier")] Guid leadId,
+        [Description("Lead identifier (GUID)")] string leadId,
         [Description("Score value (0-100)")] decimal score,
         [Description("Rationale for the score")] string rationale)
     {
-        this._logger.LogInformation(
+        if (!Guid.TryParse(leadId, out Guid leadGuid))
+        {
+            return $"Error: Invalid lead ID '{leadId}'. Must be a valid GUID.";
+        }
+
+        this.logger.LogInformation(
             "Agent scoring lead {LeadId} with score {Score}",
-            leadId,
+            leadGuid,
             score);
 
         if (score < 0 || score > 100)
@@ -192,8 +253,41 @@ public sealed class CampaignAgentTools
             return "Error: Score must be between 0 and 100";
         }
 
-        // In production, this would use a lead repository
-        // For now, this demonstrates the pattern
-        return $"Lead {leadId} scored successfully with {score}/100";
+        // Find the campaign that contains this lead
+        IEnumerable<Campaign> campaigns = await this.campaignRepository.GetAll();
+        Campaign? campaign = null;
+        Lead? lead = null;
+
+        foreach (Campaign c in campaigns)
+        {
+            Campaign? fullCampaign = await this.campaignRepository.LoadComplete(c.Id);
+            if (fullCampaign != null)
+            {
+                lead = fullCampaign.Leads.FirstOrDefault(l => l.Id == leadGuid);
+                if (lead != null)
+                {
+                    campaign = fullCampaign;
+                    break;
+                }
+            }
+        }
+
+        if (lead == null || campaign == null)
+        {
+            return $"Error: Lead {leadGuid} not found";
+        }
+
+        lead.Score = score;
+        lead.ScoringRationale = rationale;
+        lead.ScoredAt = DateTime.UtcNow;
+
+        await this.campaignRepository.Update(campaign);
+
+        // Log event
+        var scoreEvent = new LeadScoredEvent(leadGuid, campaign.Id, score, rationale);
+        await this.eventLog.Append(scoreEvent);
+
+        return $"Lead {leadGuid} scored successfully with {score}/100. Rationale: {rationale}";
     }
 }
+

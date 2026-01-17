@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="CampaignsController.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using Microsoft.AspNetCore.Mvc;
 using OutreachGenie.Api.Domain.Entities;
 using OutreachGenie.Api.Infrastructure.Repositories;
@@ -12,8 +18,8 @@ namespace OutreachGenie.Api.Controllers;
 [Route("api/[controller]")]
 public sealed class CampaignsController : ControllerBase
 {
-    private readonly ICampaignRepository _campaignRepository;
-    private readonly ILogger<CampaignsController> _logger;
+    private readonly ICampaignRepository campaignRepository;
+    private readonly ILogger<CampaignsController> logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CampaignsController"/> class.
@@ -22,8 +28,8 @@ public sealed class CampaignsController : ControllerBase
         ICampaignRepository campaignRepository,
         ILogger<CampaignsController> logger)
     {
-        this._campaignRepository = campaignRepository;
-        this._logger = logger;
+        this.campaignRepository = campaignRepository;
+        this.logger = logger;
     }
 
     /// <summary>
@@ -36,7 +42,7 @@ public sealed class CampaignsController : ControllerBase
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        this._logger.LogInformation("Creating new campaign: {Name}", request.Name);
+        this.logger.LogInformation("Creating new campaign: {Name}", request.Name);
 
         Campaign campaign = new(
             Guid.NewGuid(),
@@ -45,8 +51,7 @@ public sealed class CampaignsController : ControllerBase
             DateTime.UtcNow,
             "{}");
 
-        await this._campaignRepository.Add(campaign, cancellationToken);
-        await this._campaignRepository.SaveChanges(cancellationToken);
+        await this.campaignRepository.Add(campaign, cancellationToken);
 
         return this.CreatedAtAction(
             nameof(this.GetCampaign),
@@ -62,7 +67,7 @@ public sealed class CampaignsController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        Campaign? campaign = await this._campaignRepository.LoadComplete(id, cancellationToken);
+        Campaign? campaign = await this.campaignRepository.LoadComplete(id, cancellationToken);
 
         if (campaign == null)
         {
@@ -80,7 +85,7 @@ public sealed class CampaignsController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        Campaign? campaign = await this._campaignRepository.LoadComplete(id, cancellationToken);
+        Campaign? campaign = await this.campaignRepository.LoadComplete(id, cancellationToken);
 
         if (campaign == null)
         {
@@ -108,7 +113,8 @@ public sealed class CampaignsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CampaignDto>>> GetAllCampaigns(CancellationToken cancellationToken)
     {
-        IEnumerable<Campaign> campaigns = await this._campaignRepository.GetAll(cancellationToken);
+        IEnumerable<Campaign> campaigns = await this.campaignRepository.GetAll(cancellationToken);
         return this.Ok(campaigns.Select(CampaignDto.FromEntity));
     }
 }
+

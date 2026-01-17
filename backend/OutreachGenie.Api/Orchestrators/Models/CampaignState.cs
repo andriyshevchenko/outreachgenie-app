@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="CampaignState.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.Text.Json.Serialization;
 
 namespace OutreachGenie.Api.Orchestrators.Models;
@@ -62,3 +68,4 @@ public sealed class CampaignState
     [JsonPropertyName("lastUpdated")]
     public DateTime LastUpdated { get; set; }
 }
+

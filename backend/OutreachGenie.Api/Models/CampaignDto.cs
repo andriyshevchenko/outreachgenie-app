@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="CampaignDto.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using OutreachGenie.Api.Domain.Entities;
 
 namespace OutreachGenie.Api.Models;
@@ -33,9 +39,14 @@ public sealed class CampaignDto
     public DateTime UpdatedAt { get; set; }
 
     /// <summary>
+    /// Campaign tasks.
+    /// </summary>
+    public List<TaskDto> Tasks { get; init; } = [];
+
+    /// <summary>
     /// Creates DTO from entity.
     /// </summary>
-    public static CampaignDto FromEntity(Campaign campaign)
+    internal static CampaignDto FromEntity(Campaign campaign)
     {
         ArgumentNullException.ThrowIfNull(campaign);
 
@@ -46,6 +57,8 @@ public sealed class CampaignDto
             Phase = campaign.Phase.ToString(),
             CreatedAt = campaign.CreatedAt,
             UpdatedAt = campaign.UpdatedAt,
+            Tasks = campaign.Tasks.Select(TaskDto.FromEntity).ToList(),
         };
     }
 }
+

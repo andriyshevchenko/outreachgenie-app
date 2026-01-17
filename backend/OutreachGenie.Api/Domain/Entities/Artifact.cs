@@ -1,15 +1,19 @@
+using System.Diagnostics.CodeAnalysis;
+
+// -----------------------------------------------------------------------
+// <copyright file="Artifact.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Entities;
 
 /// <summary>
 /// Represents a file artifact generated during a campaign.
 /// </summary>
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated public classes", Justification = "Instantiated by Entity Framework Core")]
 public sealed class Artifact
 {
-    private Artifact()
-    {
-        // Required for EF Core
-    }
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Artifact"/> class.
     /// </summary>
@@ -75,4 +79,10 @@ public sealed class Artifact
     /// Parent campaign.
     /// </summary>
     public Campaign Campaign { get; private set; } = null!;
+
+    private Artifact()
+    {
+        // Required for EF Core
+    }
 }
+

@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------
+// <copyright file="TaskCompletedEvent.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System.Diagnostics.CodeAnalysis;
 using OutreachGenie.Api.Domain.Abstractions;
 
 namespace OutreachGenie.Api.Domain.Models;
@@ -5,6 +12,7 @@ namespace OutreachGenie.Api.Domain.Models;
 /// <summary>
 /// Event raised when a task is completed.
 /// </summary>
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated public classes", Justification = "Instantiated at runtime when tasks are completed")]
 public sealed class TaskCompletedEvent : IDomainEvent
 {
     /// <summary>
@@ -53,3 +61,4 @@ public sealed class TaskCompletedEvent : IDomainEvent
     /// </summary>
     public string CompletedBy { get; }
 }
+

@@ -1,9 +1,16 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// <copyright file="20260116163024_InitialCreate.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 #pragma warning disable SA1137 // Elements should have the same indentation
 #pragma warning disable CA1861 // Prefer static readonly fields over constant array arguments
+#pragma warning disable S1192 // String literals should not be duplicated
 
 namespace OutreachGenie.Api.Migrations;
 
@@ -215,3 +222,4 @@ public partial class InitialCreate : Migration
             name: "Campaigns");
     }
 }
+

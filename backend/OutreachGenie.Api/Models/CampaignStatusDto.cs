@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="CampaignStatusDto.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Models;
 
 /// <summary>
@@ -55,3 +61,4 @@ public sealed class CampaignStatusDto
     /// </summary>
     public DateTime UpdatedAt { get; set; }
 }
+

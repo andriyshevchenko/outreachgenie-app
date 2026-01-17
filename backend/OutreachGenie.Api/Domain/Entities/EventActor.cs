@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="EventActor.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Entities;
 
 /// <summary>
@@ -18,5 +24,6 @@ public enum EventActor
     /// <summary>
     /// Action performed by the system.
     /// </summary>
-    System
+    System,
 }
+

@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="CampaignTask.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Entities;
 
 /// <summary>
@@ -5,14 +11,10 @@ namespace OutreachGenie.Api.Domain.Entities;
 /// </summary>
 public sealed class CampaignTask
 {
-    private CampaignTask()
-    {
-        // Required for EF Core
-    }
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CampaignTask"/> class.
     /// </summary>
+#pragma warning disable S107 // Methods should not have too many parameters
     public CampaignTask(
         Guid id,
         Guid campaignId,
@@ -21,7 +23,9 @@ public sealed class CampaignTask
         TaskStatus status,
         int orderIndex,
         bool requiresApproval,
+        bool requiresPreviousTask,
         DateTime createdAt)
+#pragma warning restore S107 // Methods should not have too many parameters
     {
         this.Id = id;
         this.CampaignId = campaignId;
@@ -30,6 +34,7 @@ public sealed class CampaignTask
         this.Status = status;
         this.OrderIndex = orderIndex;
         this.RequiresApproval = requiresApproval;
+        this.RequiresPreviousTask = requiresPreviousTask;
         this.CreatedAt = createdAt;
     }
 
@@ -56,7 +61,7 @@ public sealed class CampaignTask
     /// <summary>
     /// Current status.
     /// </summary>
-    public TaskStatus Status { get; private set; }
+    public TaskStatus Status { get; set; }
 
     /// <summary>
     /// Execution order index.
@@ -67,6 +72,12 @@ public sealed class CampaignTask
     /// Indicates whether approval is required.
     /// </summary>
     public bool RequiresApproval { get; private set; }
+
+    /// <summary>
+    /// Indicates whether the previous task must be completed before this task can be started.
+    /// Enforces sequential execution to prevent the LLM from skipping steps.
+    /// </summary>
+    public bool RequiresPreviousTask { get; private set; }
 
     /// <summary>
     /// Creation timestamp.
@@ -82,4 +93,10 @@ public sealed class CampaignTask
     /// Parent campaign.
     /// </summary>
     public Campaign Campaign { get; private set; } = null!;
+
+    private CampaignTask()
+    {
+        // Required for EF Core
+    }
 }
+

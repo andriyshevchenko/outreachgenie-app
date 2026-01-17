@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="CreateCampaignRequest.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Models;
 
 /// <summary>
@@ -10,3 +16,4 @@ public sealed class CreateCampaignRequest
     /// </summary>
     public string Name { get; set; } = string.Empty;
 }
+

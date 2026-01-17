@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="TaskState.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.Text.Json.Serialization;
 
 namespace OutreachGenie.Api.Orchestrators.Models;
@@ -37,3 +43,4 @@ public sealed class TaskState
     [JsonPropertyName("orderIndex")]
     public int OrderIndex { get; set; }
 }
+

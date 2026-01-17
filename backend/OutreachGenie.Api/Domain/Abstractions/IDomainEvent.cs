@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="IDomainEvent.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace OutreachGenie.Api.Domain.Abstractions;
 
 /// <summary>
@@ -20,3 +26,4 @@ public interface IDomainEvent
     /// </summary>
     string EventType { get; }
 }
+

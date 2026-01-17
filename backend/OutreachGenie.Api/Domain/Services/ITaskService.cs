@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="ITaskService.cs" company="OutreachGenie">
+// Copyright (c) OutreachGenie. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using OutreachGenie.Api.Domain.Abstractions;
 using OutreachGenie.Api.Domain.Entities;
 
@@ -21,6 +27,7 @@ public interface ITaskService
         string title,
         string description,
         bool requiresApproval,
+        bool requiresPreviousTask = true,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -38,3 +45,4 @@ public interface ITaskService
         CampaignPhase phase,
         CancellationToken cancellationToken = default);
 }
+
